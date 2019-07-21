@@ -1,6 +1,6 @@
 {
-	"name": "c/module-product",
-	"description": "N/Aonnectpos",
+	"name": "connectpos/module-product",
+	"description": "N/A",
 	"type": "magento2-module",
 	"version": "19.06.01",
 	"license": [
