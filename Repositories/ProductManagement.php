@@ -31,6 +31,7 @@ use SM\Product\Repositories\ProductManagement\ProductPrice;
 use SM\Product\Repositories\ProductManagement\ProductStock;
 use SM\XRetail\Helper\DataConfig;
 use SM\XRetail\Repositories\Contract\ServiceAbstract;
+use Magento\Eav\Api\AttributeSetRepositoryInterface;
 
 /**
  * Class ProductManagement
@@ -113,6 +114,10 @@ class ProductManagement extends ServiceAbstract
      * @var \Magento\Framework\Registry
      */
     private $registry;
+    /**
+     * @var \Magento\Eav\Api\AttributeSetRepositoryInterface
+     */
+    protected $attributeSet;
 
     /**
      * ProductManagement constructor.
@@ -160,7 +165,8 @@ class ProductManagement extends ServiceAbstract
         WarehouseIntegrateManagement $warehouseIntegrateManagement,
         ProductHelper $productHelper,
         ProductImageHelper $productImageHelper,
-        Registry $registry
+        Registry $registry,
+        AttributeSetRepositoryInterface $attributeSet
     )
     {
         $this->cache                        = $cache;
@@ -180,6 +186,7 @@ class ProductManagement extends ServiceAbstract
         $this->productHelper                = $productHelper;
         $this->productImageHelper           = $productImageHelper;
         $this->registry                     = $registry;
+        $this->attributeSet                 = $attributeSet;
         parent::__construct($requestInterface, $dataConfig, $storeManager);
     }
 
@@ -398,6 +405,8 @@ class ProductManagement extends ServiceAbstract
         $xProduct->setData('tier_prices', $this->getProductPrice()->getExistingPrices($product, 'tier_price', true));
 
         $xProduct->setData('store_id', $storeId);
+
+        $xProduct->setData('attribute_set_name', $this->getAttributeSetName($product->getAttributeSetId()));
 
         $xProduct->setData('origin_image', $this->productImageHelper->getImageUrl($product));
 
@@ -645,5 +654,20 @@ class ProductManagement extends ServiceAbstract
     public function getProductModel()
     {
         return $this->productFactory->create();
+    }
+
+    /**
+     * @param $attributeSetId
+     *
+     * @return mixed
+     */
+    public function getAttributeSetName($attributeSetId)
+    {
+        try {
+            $attributeSetRepository = $this->attributeSet->get($attributeSetId);
+            return $attributeSetRepository->getAttributeSetName();
+        } catch (\Exception $e) {
+            return $attributeSetId;
+        }
     }
 }
