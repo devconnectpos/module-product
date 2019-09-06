@@ -15,4 +15,7 @@
     <type name="Magento\Catalog\Model\Indexer\Product\Flat\State">
         <plugin name="SMProductCollection" type="SM\Product\Model\Indexer\Product\Flat\State" sortOrder="1" />
     </type>
+    <type name="Magento\CatalogInventory\Helper\Stock">
+        <plugin name="removeStockQueryCollection" type="SM\Product\Plugin\RemoveStockStatusToInventoryCollection"/>
+    </type>
 </config>
