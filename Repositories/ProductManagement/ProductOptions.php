@@ -160,7 +160,7 @@ class ProductOptions
     protected function getOptionsConfigurableProduct(\Magento\Catalog\Model\Product $product)
     {
         $this->resetProductInBlock($product);
-
+        $this->catalogProduct->setSkipSaleableCheck(true);
         return json_decode($this->getConfigurableBlock()->getJsonConfig(), true);
     }
 
@@ -210,6 +210,7 @@ class ProductOptions
     {
         $outputOptions = [];
         $this->resetProductInBlock($product);
+        $this->catalogProduct->setSkipSaleableCheck(true);
         //$this->getGroupedBlock()->setPreconfiguredValue();
         $_associatedProducts    = $this->getGroupedBlock()->getAssociatedProducts();
         $_hasAssociatedProducts = count($_associatedProducts) > 0;

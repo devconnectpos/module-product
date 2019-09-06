@@ -18,6 +18,9 @@ class ProductHelper
 {
     protected $productAdditionAttribute;
 
+    protected $_productAdditionAttribute;
+
+    protected $_productAttributeStatus;
     protected $productSearchAttribute;
     /**
      * @var \Magento\Config\Model\Config\Loader
@@ -36,12 +39,18 @@ class ProductHelper
      */
     protected $objectManager;
 
+    /**
+     * @var \Magento\Framework\App\Config\ScopeConfigInterface
+     */
+    protected $scopeConfig;
     public function __construct(
         Loader $loader,
         Type $entityType,
         ObjectManagerInterface $objectManager,
-        ProductFactory $productFactory
+        ProductFactory $productFactory,
+        \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig
     ) {
+        $this->scopeConfig = $scopeConfig;
         $this->productFactory = $productFactory;
         $this->configLoader = $loader;
         $this->entityType     = $entityType;
@@ -69,6 +78,22 @@ class ProductHelper
 
         return $this->productAdditionAttribute;
     }
+
+    public function getPWAProductAttributeStatus($storeID) {
+        $disableProduct = $this->scopeConfig->getValue('pwa/product_category/pwa_show_disable_products', 'stores',$storeID);
+        return $disableProduct;
+    }
+
+    public function getPWAOutOfStockStatus($storeID) {
+        $showOutOfStock = $this->scopeConfig->getValue('pwa/product_category/pwa_show_out_of_stock_products', 'stores',$storeID);
+        return $showOutOfStock;
+    }
+
+    public function getPWAProductVisibility($storeID) {
+        $productVisibility = $this->scopeConfig->getValue('pwa/product_category/pwa_show_product_visibility', 'stores',$storeID);
+        return $productVisibility;
+    }
+
 
     /**
      * @return array|mixed
