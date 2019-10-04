@@ -547,12 +547,7 @@ class ProductManagement extends ServiceAbstract
 
         $xProduct->setData('custom_attributes', $this->getProductAttribute()->getCustomAttributes($product));
         // get options
-        if (($this->getSearchCriteria()->getData('isFindProduct') == 1
-             && $this->getSearchCriteria()->getData('isViewDetail') == true)
-            || $this->getSearchCriteria()->getData('searchOnline') == 1) {
-            // get options
-            $xProduct->setData('x_options', $this->getProductOptions()->getOptions($product));
-        }
+        $xProduct->setData('x_options', $this->getProductOptions()->getOptions($product));
 
         $xProduct->setData('customizable_options', $this->getProductOptions()->getCustomizableOptions($product));
         // get description
