@@ -33,7 +33,6 @@ use SM\Product\Repositories\ProductManagement\ProductStock;
 use SM\XRetail\Helper\DataConfig;
 use SM\XRetail\Repositories\Contract\ServiceAbstract;
 use Magento\Eav\Api\AttributeSetRepositoryInterface;
-use Magento\Framework\Notification\NotifierInterface as NotifierPool;
 
 /**
  * Class ProductManagement
@@ -136,44 +135,31 @@ class ProductManagement extends ServiceAbstract
      * @var \Magento\Catalog\Model\CategoryRepository
      */
     protected $categoryRepository;
-    /**
-     * Notifier Pool
-     *
-     * @var NotifierPool
-     */
-    protected $notifierPool;
 
     /**
      * ProductManagement constructor.
      *
-     * @param \Magento\Framework\Cache\FrontendInterface                           $cache
-     * @param \Magento\Catalog\Model\CategoryFactory                               $categoryFactory
-     * @param RequestInterface                                                     $requestInterface
-     * @param DataConfig                                                           $dataConfig
-     * @param StoreManagerInterface                                                $storeManager
-     * @param ProductFactory                                                       $productFactory
-     * @param CollectionFactory                                                    $collectionFactory
-     * @param \SM\Product\Repositories\ProductManagement\ProductOptions            $productOptions
-     * @param \Magento\Catalog\Model\Product\Media\Config                          $productMediaConfig
-     * @param \SM\Product\Repositories\ProductManagement\ProductAttribute          $productAttribute
-     * @param \SM\Product\Repositories\ProductManagement\ProductStock              $productStock
-     * @param \SM\Product\Repositories\ProductManagement\ProductPrice              $productPrice
+     * @param \Magento\Framework\Cache\FrontendInterface $cache
+     * @param RequestInterface $requestInterface
+     * @param DataConfig $dataConfig
+     * @param StoreManagerInterface $storeManager
+     * @param ProductFactory $productFactory
+     * @param CollectionFactory $collectionFactory
+     * @param \SM\Product\Repositories\ProductManagement\ProductOptions $productOptions
+     * @param \Magento\Catalog\Model\Product\Media\Config $productMediaConfig
+     * @param \SM\Product\Repositories\ProductManagement\ProductAttribute $productAttribute
+     * @param \SM\Product\Repositories\ProductManagement\ProductStock $productStock
+     * @param \SM\Product\Repositories\ProductManagement\ProductPrice $productPrice
      * @param \SM\Product\Repositories\ProductManagement\ProductMediaGalleryImages $productMediaGalleryImages
-     * @param \Magento\Catalog\Helper\Product                                      $catalogProduct
-     * @param \SM\CustomSale\Helper\Data                                           $customSaleHelper
-     * @param \Magento\Framework\Event\ManagerInterface                            $eventManagement
+     * @param \Magento\Catalog\Helper\Product $catalogProduct
+     * @param \SM\CustomSale\Helper\Data $customSaleHelper
+     * @param \Magento\Framework\Event\ManagerInterface $eventManagement
      *
-     * @param \SM\Integrate\Helper\Data                                            $integrateData
-     * @param WarehouseIntegrateManagement                                         $warehouseIntegrateManagement
-     * @param \SM\Product\Helper\ProductHelper                                     $productHelper
-     * @param ProductImageHelper                                                   $productImageHelper
-     * @param \Magento\Framework\Registry                                          $registry
-     * @param \Magento\Eav\Api\AttributeSetRepositoryInterface                     $attributeSet
-     * @param \Magento\Eav\Model\ResourceModel\Entity\Attribute                    $eavAttribute
-     * @param \Magento\Framework\App\Config\ScopeConfigInterface                   $scopeConfig
-     * @param \Magento\Catalog\Model\CategoryRepository                            $categoryRepository
-     * @param \Magento\Framework\Notification\NotifierInterface                    $notifierPool
-     *
+     * @param \SM\Integrate\Helper\Data $integrateData
+     * @param WarehouseIntegrateManagement $warehouseIntegrateManagement
+     * @param \SM\Product\Helper\ProductHelper $productHelper
+     * @param ProductImageHelper $productImageHelper
+     * @param \Magento\Framework\Registry $registry
      * @internal param \SM\Product\Repositories\CustomSalesHelper $customSalesHelper
      */
     public function __construct(
@@ -201,8 +187,7 @@ class ProductManagement extends ServiceAbstract
         AttributeSetRepositoryInterface $attributeSet,
         \Magento\Eav\Model\ResourceModel\Entity\Attribute $eavAttribute,
         \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
-        \Magento\Catalog\Model\CategoryRepository $categoryRepository,
-        NotifierPool $notifierPool
+        \Magento\Catalog\Model\CategoryRepository $categoryRepository
     ) {
         $this->cache                        = $cache;
         $this->catalogProduct               = $catalogProduct;
@@ -226,7 +211,6 @@ class ProductManagement extends ServiceAbstract
         $this->_categoryFactory             = $categoryFactory;
         $this->categoryRepository           = $categoryRepository;
         $this->scopeConfig                  = $scopeConfig;
-        $this->notifierPool                 = $notifierPool;
         parent::__construct($requestInterface, $dataConfig, $storeManager);
     }
 
@@ -409,7 +393,6 @@ class ProductManagement extends ServiceAbstract
                             $item
                         );
                     } catch (\Exception $e) {
-                        $this->notifierPool->addCritical('Error During Load Product ID ' .$item->getId(), $e->getMessage());
                     }
                 }
             }
@@ -690,7 +673,7 @@ class ProductManagement extends ServiceAbstract
             $collection->addFieldToFilter('entity_id', ['in' => explode(",", $ids)]);
         }
         if (($this->integrateData->isIntegrateWH()
-             || $this->integrateData->isMagentoInventory())
+                || $this->integrateData->isMagentoInventory())
             && ($searchCriteria->getData('warehouse_id')
                 || $searchCriteria->getData('warehouseId'))) {
             if (is_null($searchCriteria->getData('warehouse_id'))) {
@@ -706,7 +689,11 @@ class ProductManagement extends ServiceAbstract
 
 
         if ($searchCriteria->getData('searchOnline') == 1) {
-            $collection = $this->searchProductOnlineCollection($searchCriteria, $collection);
+            if ($searchCriteria->getData('visibility')) {
+                // 1: Not Visible Individually / 2: Catalog / 3: Search / 4: Catalog, Search
+                $collection->addAttributeToFilter('visibility', ['in' => $searchCriteria->getData('visibility')]);
+            }
+         $collection = $this->searchProductOnlineCollection($searchCriteria, $collection);
         }
 
         if($searchCriteria->getData('isPWA') && !!$searchCriteria->getData('storeId')){
@@ -723,21 +710,21 @@ class ProductManagement extends ServiceAbstract
 
             // filter online
 
-            if (($searchCriteria->getData('minPriceFields') == null || $searchCriteria->getData('minPriceFields') == '')
-                && ($searchCriteria->getData('maxPriceFields') !== null && $searchCriteria->getData('maxPriceFields') !== '')) {
-                $collection->addPriceDataFieldFilter('%s <= %s', ['final_price', $searchCriteria->getData('maxPriceFields')])
-                           ->addFinalPrice();
-            } else if (($searchCriteria->getData('maxPriceFields') == null || $searchCriteria->getData('maxPriceFields') == '')
-                       && ($searchCriteria->getData('minPriceFields') !== null && $searchCriteria->getData('minPriceFields') !== '')) {
-                $collection->addPriceDataFieldFilter('%s >= %s', ['final_price', $searchCriteria->getData('minPriceFields')])
-                           ->addFinalPrice();
-            } else if (($searchCriteria->getData('maxPriceFields') !== null && $searchCriteria->getData('maxPriceFields') !== '') && ($searchCriteria->getData('minPriceFields') !== null && $searchCriteria->getData('minPriceFields') !== '')) {
-                $collection->addPriceDataFieldFilter('%s >= %s', ['final_price', $searchCriteria->getData('minPriceFields')])
-                           ->addPriceDataFieldFilter('%s <= %s', ['final_price', $searchCriteria->getData('maxPriceFields')])
-                           ->addFinalPrice();
-            } else {
-                $collection->addFinalPrice();
-            }
+                if (($searchCriteria->getData('minPriceFields') == null || $searchCriteria->getData('minPriceFields') == '')
+                    && ($searchCriteria->getData('maxPriceFields') !== null && $searchCriteria->getData('maxPriceFields') !== '')) {
+                    $collection->addPriceDataFieldFilter('%s <= %s', ['final_price', $searchCriteria->getData('maxPriceFields')])
+                        ->addFinalPrice();
+                } else if (($searchCriteria->getData('maxPriceFields') == null || $searchCriteria->getData('maxPriceFields') == '')
+                    && ($searchCriteria->getData('minPriceFields') !== null && $searchCriteria->getData('minPriceFields') !== '')) {
+                    $collection->addPriceDataFieldFilter('%s >= %s', ['final_price', $searchCriteria->getData('minPriceFields')])
+                        ->addFinalPrice();
+                } else if (($searchCriteria->getData('maxPriceFields') !== null && $searchCriteria->getData('maxPriceFields') !== '') && ($searchCriteria->getData('minPriceFields') !== null && $searchCriteria->getData('minPriceFields') !== '')) {
+                    $collection->addPriceDataFieldFilter('%s >= %s', ['final_price', $searchCriteria->getData('minPriceFields')])
+                        ->addPriceDataFieldFilter('%s <= %s', ['final_price', $searchCriteria->getData('maxPriceFields')])
+                        ->addFinalPrice();
+                } else {
+                    $collection->addFinalPrice();
+                }
 
             if ($searchCriteria->getData('isViewDetail') && $searchCriteria->getData('isViewDetail') == true) {
 

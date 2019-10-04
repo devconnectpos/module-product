@@ -69,7 +69,7 @@ class ProductHelper
                 ARRAY_FILTER_USE_KEY
             );
 
-            if (count($productAttribute) > 0 && is_array(json_decode(current($productAttribute)['value'], true))) {
+            if (is_array($productAttribute) && count($productAttribute) > 0 && is_array(json_decode(current($productAttribute)['value'], true))) {
                 $this->productAdditionAttribute = json_decode(current($productAttribute)['value'], true);
             } else {
                 $this->productAdditionAttribute = [];
