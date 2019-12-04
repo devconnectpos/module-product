@@ -54,6 +54,14 @@ class ProductStock
         $stocks = $this->stockItemRepository->getList($this->stockItemCriteria)->getItems();
         if (is_array($stocks) && count($stocks) == 1) {
             $stock = array_values($stocks)[0];
+            $listType = ['simple', 'virtual', 'giftcard', 'aw_giftcard', 'aw_giftcard2'];
+            if (in_array($product->getType(), $listType)) {
+                if ($stock->getData('qty') > 0 && $stock->getData('is_in_stock') == 1) {
+                    $stock->setData('is_in_stock', '1');
+                } else {
+                    $stock->setData('is_in_stock', '0');
+                }
+            }
             return $stock->getData();
         }
         return [];
