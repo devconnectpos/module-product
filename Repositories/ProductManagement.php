@@ -33,6 +33,7 @@ use SM\Product\Repositories\ProductManagement\ProductStock;
 use SM\XRetail\Helper\DataConfig;
 use SM\XRetail\Repositories\Contract\ServiceAbstract;
 use Magento\Eav\Api\AttributeSetRepositoryInterface;
+use Magento\Framework\Notification\NotifierInterface as NotifierPool;
 
 /**
  * Class ProductManagement
@@ -135,32 +136,42 @@ class ProductManagement extends ServiceAbstract
      * @var \Magento\Catalog\Model\CategoryRepository
      */
     protected $categoryRepository;
+    /**
+     * Notifier Pool
+     *
+     * @var NotifierPool
+     */
+    protected $notifierPool;
 
     /**
      * ProductManagement constructor.
      *
-     * @param \Magento\Framework\Cache\FrontendInterface $cache
-     * @param RequestInterface $requestInterface
-     * @param DataConfig $dataConfig
-     * @param StoreManagerInterface $storeManager
-     * @param ProductFactory $productFactory
-     * @param CollectionFactory $collectionFactory
-     * @param \SM\Product\Repositories\ProductManagement\ProductOptions $productOptions
-     * @param \Magento\Catalog\Model\Product\Media\Config $productMediaConfig
-     * @param \SM\Product\Repositories\ProductManagement\ProductAttribute $productAttribute
-     * @param \SM\Product\Repositories\ProductManagement\ProductStock $productStock
-     * @param \SM\Product\Repositories\ProductManagement\ProductPrice $productPrice
+     * @param \Magento\Framework\Cache\FrontendInterface                           $cache
+     * @param \Magento\Catalog\Model\CategoryFactory                               $categoryFactory
+     * @param \Magento\Framework\App\RequestInterface                              $requestInterface
+     * @param \SM\XRetail\Helper\DataConfig                                        $dataConfig
+     * @param \Magento\Store\Model\StoreManagerInterface                           $storeManager
+     * @param \Magento\Catalog\Model\ProductFactory                                $productFactory
+     * @param \Magento\Catalog\Model\ResourceModel\Product\CollectionFactory       $collectionFactory
+     * @param \SM\Product\Repositories\ProductManagement\ProductOptions            $productOptions
+     * @param \Magento\Catalog\Model\Product\Media\Config                          $productMediaConfig
+     * @param \SM\Product\Repositories\ProductManagement\ProductAttribute          $productAttribute
+     * @param \SM\Product\Repositories\ProductManagement\ProductStock              $productStock
+     * @param \SM\Product\Repositories\ProductManagement\ProductPrice              $productPrice
      * @param \SM\Product\Repositories\ProductManagement\ProductMediaGalleryImages $productMediaGalleryImages
-     * @param \Magento\Catalog\Helper\Product $catalogProduct
-     * @param \SM\CustomSale\Helper\Data $customSaleHelper
-     * @param \Magento\Framework\Event\ManagerInterface $eventManagement
-     *
-     * @param \SM\Integrate\Helper\Data $integrateData
-     * @param WarehouseIntegrateManagement $warehouseIntegrateManagement
-     * @param \SM\Product\Helper\ProductHelper $productHelper
-     * @param ProductImageHelper $productImageHelper
-     * @param \Magento\Framework\Registry $registry
-     * @internal param \SM\Product\Repositories\CustomSalesHelper $customSalesHelper
+     * @param \Magento\Catalog\Helper\Product                                      $catalogProduct
+     * @param \SM\CustomSale\Helper\Data                                           $customSaleHelper
+     * @param \Magento\Framework\Event\ManagerInterface                            $eventManagement
+     * @param \SM\Integrate\Helper\Data                                            $integrateData
+     * @param \SM\Integrate\Model\WarehouseIntegrateManagement                     $warehouseIntegrateManagement
+     * @param \SM\Product\Helper\ProductHelper                                     $productHelper
+     * @param \SM\Product\Helper\ProductImageHelper                                $productImageHelper
+     * @param \Magento\Framework\Registry                                          $registry
+     * @param \Magento\Eav\Api\AttributeSetRepositoryInterface                     $attributeSet
+     * @param \Magento\Eav\Model\ResourceModel\Entity\Attribute                    $eavAttribute
+     * @param \Magento\Framework\App\Config\ScopeConfigInterface                   $scopeConfig
+     * @param \Magento\Catalog\Model\CategoryRepository                            $categoryRepository
+     * @param \Magento\Framework\Notification\NotifierInterface                    $notifierPool
      */
     public function __construct(
         \Magento\Framework\Cache\FrontendInterface $cache,
@@ -187,7 +198,8 @@ class ProductManagement extends ServiceAbstract
         AttributeSetRepositoryInterface $attributeSet,
         \Magento\Eav\Model\ResourceModel\Entity\Attribute $eavAttribute,
         \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
-        \Magento\Catalog\Model\CategoryRepository $categoryRepository
+        \Magento\Catalog\Model\CategoryRepository $categoryRepository,
+        NotifierPool $notifierPool
     ) {
         $this->cache                        = $cache;
         $this->catalogProduct               = $catalogProduct;
@@ -195,7 +207,7 @@ class ProductManagement extends ServiceAbstract
         $this->productAttribute             = $productAttribute;
         $this->productFactory               = $productFactory;
         $this->collectionFactory            = $collectionFactory;
-        $this->customSalesHelper           = $customSaleHelper;
+        $this->customSalesHelper            = $customSaleHelper;
         $this->productOptions               = $productOptions;
         $this->productMediaConfig           = $productMediaConfig;
         $this->productStock                 = $productStock;
@@ -211,6 +223,7 @@ class ProductManagement extends ServiceAbstract
         $this->_categoryFactory             = $categoryFactory;
         $this->categoryRepository           = $categoryRepository;
         $this->scopeConfig                  = $scopeConfig;
+        $this->notifierPool                 = $notifierPool;
         parent::__construct($requestInterface, $dataConfig, $storeManager);
     }
 
@@ -266,6 +279,7 @@ class ProductManagement extends ServiceAbstract
                     $items[] = $this->processRelatedProduct($related, $storeId, WarehouseIntegrateManagement::getWarehouseId());
                 }
                 catch (\Exception $e) {
+                    $this->addNotificationError($e->getMessage(), $relatedProduct->getId());
                 }
             }
         };
@@ -393,6 +407,7 @@ class ProductManagement extends ServiceAbstract
                             $item
                         );
                     } catch (\Exception $e) {
+                        $this->addNotificationError($e->getMessage(), $item->getId());
                     }
                 }
             }
@@ -479,6 +494,7 @@ class ProductManagement extends ServiceAbstract
                 $items[] = $pwaProduct;
             }
             catch (\Exception $e) {
+                $this->addNotificationError($e->getMessage(), $item->getId());
             }
         }
         return $this->getSearchResult()
@@ -500,23 +516,25 @@ class ProductManagement extends ServiceAbstract
     public function getRelatedProductForPWA($product , $storeId) {
         $relatedProductCollection = $product->getRelatedProductCollection()->addStoreFilter($storeId)->getItems();
         $items = [];
-            foreach ($relatedProductCollection as $relatedProduct) {
+        foreach ($relatedProductCollection as $relatedProduct) {
+            try {
                 $related = $this->getProductModel()->load($relatedProduct->getId());
-                    if ($related->getData('status') == '1') {
-                        $pwa = new PWAProduct();
-                        $pwa->setData("id", $related->getData('entity_id'));
-                        $pwa->addData($related->getData());
-                        $pwa->setData('origin_image', $this->productImageHelper->getImageUrl($related));
-                        $pwa->setData('customizable_options', $this->getProductOptions()->getCustomizableOptions($related));
-                        $pwa->setData('x_options', $this->getProductOptions()->getOptions($related));
-                        $pwa->setData('media_gallery', $this->productMediaGalleryImages->getMediaGalleryImages($related));
-                        $pwa->setData('check_related_product',$this->checkRelatedProduct($related));
-                        $pwa->setData('price', $related->getPrice());
-                        $items[] = $pwa->getData();
-                    }
-
+                if ($related->getData('status') == '1') {
+                    $pwa = new PWAProduct();
+                    $pwa->setData("id", $related->getData('entity_id'));
+                    $pwa->addData($related->getData());
+                    $pwa->setData('origin_image', $this->productImageHelper->getImageUrl($related));
+                    $pwa->setData('customizable_options', $this->getProductOptions()->getCustomizableOptions($related));
+                    $pwa->setData('x_options', $this->getProductOptions()->getOptions($related));
+                    $pwa->setData('media_gallery', $this->productMediaGalleryImages->getMediaGalleryImages($related));
+                    $pwa->setData('check_related_product',$this->checkRelatedProduct($related));
+                    $pwa->setData('price', $related->getPrice());
+                    $items[] = $pwa->getData();
+                }
+            } catch (\Exception $e) {
+                $this->addNotificationError($e->getMessage(), $relatedProduct->getId());
             }
-        //}
+        }
         return $items;
     }
 
@@ -914,5 +932,16 @@ class ProductManagement extends ServiceAbstract
         } catch (\Exception $e) {
             return $attributeSetId;
         }
+    }
+
+    /**
+     * @param      $message
+     * @param null $item
+     *
+     * @return mixed
+     */
+    private function addNotificationError($message, $item = null)
+    {
+        return $this->notifierPool->addCritical('Error During Load Product ID ' .$item, $message);
     }
 }
