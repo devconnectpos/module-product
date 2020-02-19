@@ -7,6 +7,7 @@
 
 namespace SM\Product\Helper;
 
+use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\ProductFactory;
 use Magento\Config\Model\Config\Loader;
 use Magento\Eav\Model\Entity\Attribute\Set;
@@ -43,6 +44,9 @@ class ProductHelper
      * @var \Magento\Framework\App\Config\ScopeConfigInterface
      */
     protected $scopeConfig;
+
+    protected $configData;
+
     public function __construct(
         Loader $loader,
         Type $entityType,
@@ -79,21 +83,20 @@ class ProductHelper
         return $this->productAdditionAttribute;
     }
 
-    public function getPWAProductAttributeStatus($storeID) {
-        $disableProduct = $this->scopeConfig->getValue('pwa/product_category/pwa_show_disable_products', 'stores',$storeID);
-        return $disableProduct;
+    public function getPWAProductAttributeStatus($storeID)
+    {
+        return $this->scopeConfig->getValue('pwa/product_category/pwa_show_disable_products', 'stores', $storeID);
     }
 
-    public function getPWAOutOfStockStatus($storeID) {
-        $showOutOfStock = $this->scopeConfig->getValue('pwa/product_category/pwa_show_out_of_stock_products', 'stores',$storeID);
-        return $showOutOfStock;
+    public function getPWAOutOfStockStatus($storeID)
+    {
+        return $this->scopeConfig->getValue('pwa/product_category/pwa_show_out_of_stock_products', 'stores', $storeID);
     }
 
-    public function getPWAProductVisibility($storeID) {
-        $productVisibility = $this->scopeConfig->getValue('pwa/product_category/pwa_show_product_visibility', 'stores',$storeID);
-        return $productVisibility;
+    public function getPWAProductVisibility($storeID)
+    {
+        return $this->scopeConfig->getValue('pwa/product_category/pwa_show_product_visibility', 'stores', $storeID);
     }
-
 
     /**
      * @return array|mixed
@@ -160,5 +163,36 @@ class ProductHelper
     protected function getProductModel()
     {
         return $this->productFactory->create();
+    }
+
+    /**
+     * @param \Magento\Catalog\Model\Product | string $product
+     *
+     * @return array
+     */
+    public function getProductAdditionalData($product)
+    {
+        $configData                     = $this->getConfigLoaderData();
+        $estimatedAvailabilityAttribute = $configData['xretail/pos/attribute_for_estimated_availability']['value'];
+        $additionalData                 = [];
+
+        if (!$product instanceof Product) {
+            $product = $this->getProductModel()->load($product);
+        }
+
+        if (!!$estimatedAvailabilityAttribute && $estimatedAvailabilityAttribute != '') {
+            $additionalData[] = ['attribute' => $estimatedAvailabilityAttribute, 'value' => $product->getData($estimatedAvailabilityAttribute)];
+        }
+
+        return $additionalData;
+    }
+
+    protected function getConfigLoaderData()
+    {
+        if ($this->configData === null) {
+            $this->configData = $this->configLoader->getConfigByPath('xretail/pos', 'default', 0);
+        }
+
+        return $this->configData;
     }
 }
