@@ -13,6 +13,7 @@ use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Registry;
 use Magento\GiftCard\Model\Giftcard;
 use Magento\Store\Model\StoreManagerInterface;
+use SM\Product\Helper\ProductHelper;
 use SM\Product\Repositories\ProductManagement\ProductOptions;
 use SM\Product\Repositories\ProductManagement\ProductPrice;
 
@@ -34,10 +35,13 @@ class M2EEGiftCard extends ProductOptions
         Registry $registry,
         ProductFactory $productFactory,
         ProductPrice $productPrice,
-        StoreManagerInterface $storeManager
+        StoreManagerInterface $storeManager,
+        \SM\Integrate\Helper\Data $integrateData,
+        \Magento\Catalog\Helper\Image $imageHelper,
+        ProductHelper $productHelper
     ) {
         $this->storeManager  = $storeManager;
-        parent::__construct($objectManager, $catalogProduct, $registry, $productFactory, $productPrice);
+        parent::__construct($objectManager, $catalogProduct, $registry, $productFactory, $productPrice, $integrateData, $imageHelper, $productHelper);
     }
 
     /**
@@ -47,7 +51,7 @@ class M2EEGiftCard extends ProductOptions
     {
         if (is_null($this->giftCardViewBlock)) {
             $this->giftCardViewBlock = $this->getObjectManager()
-                                            ->create('\Magento\GiftCard\Block\Catalog\Product\View\Type\Giftcard');
+                ->create('\Magento\GiftCard\Block\Catalog\Product\View\Type\Giftcard');
         }
 
         return $this->giftCardViewBlock;
@@ -57,6 +61,7 @@ class M2EEGiftCard extends ProductOptions
      * @param \Magento\Catalog\Model\Product $product
      *
      * @return array
+     * @throws \Magento\Framework\Exception\NoSuchEntityException
      */
     public function getGiftCardOption(\Magento\Catalog\Model\Product $product)
     {
@@ -87,7 +92,9 @@ class M2EEGiftCard extends ProductOptions
 
     /**
      * @param Product $product
+     *
      * @return array
+     * @throws \Magento\Framework\Exception\NoSuchEntityException
      */
     public function getAmounts($product)
     {

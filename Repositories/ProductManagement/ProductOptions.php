@@ -12,6 +12,7 @@ use Magento\Catalog\Helper\Product;
 use Magento\Catalog\Model\ProductFactory;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Registry;
+use SM\Product\Helper\ProductHelper;
 
 /**
  * Class ProductOptions
@@ -20,6 +21,11 @@ use Magento\Framework\Registry;
  */
 class ProductOptions
 {
+
+    /**
+     * @var \SM\Product\Helper\ProductHelper
+     */
+    protected $productHelper;
 
     /**
      * @var \Magento\Framework\ObjectManagerInterface
@@ -41,28 +47,45 @@ class ProductOptions
      * @var \SM\Product\Repositories\ProductManagement\ProductPrice
      */
     private $productPrice;
+    /**
+     * @var \SM\Integrate\Helper\Data
+     */
+    private $integrateData;
+
+    private $obBvalue;
+
+    protected $imageHelper;
 
     /**
      * ProductOptions constructor.
      *
-     * @param \Magento\Framework\ObjectManagerInterface               $objectManager
-     * @param \Magento\Catalog\Helper\Product                         $catalogProduct
-     * @param \Magento\Framework\Registry                             $registry
-     * @param \Magento\Catalog\Model\ProductFactory                   $productFactory
-     * @param \SM\Product\Repositories\ProductManagement\ProductPrice $productPrice
+     * @param ObjectManagerInterface           $objectManager
+     * @param Product                          $catalogProduct
+     * @param Registry                         $registry
+     * @param ProductFactory                   $productFactory
+     * @param ProductPrice                     $productPrice
+     * @param \SM\Integrate\Helper\Data        $integrateData
+     * @param \Magento\Catalog\Helper\Image    $imageHelper
+     * @param \SM\Product\Helper\ProductHelper $productHelper
      */
     public function __construct(
         ObjectManagerInterface $objectManager,
         Product $catalogProduct,
         Registry $registry,
         ProductFactory $productFactory,
-        ProductPrice $productPrice
+        ProductPrice $productPrice,
+        \SM\Integrate\Helper\Data $integrateData,
+        \Magento\Catalog\Helper\Image $imageHelper,
+        ProductHelper $productHelper
     ) {
         $this->productFactory = $productFactory;
         $this->objectManager  = $objectManager;
         $this->catalogProduct = $catalogProduct;
         $this->registry       = $registry;
         $this->productPrice   = $productPrice;
+        $this->integrateData  = $integrateData;
+        $this->imageHelper    = $imageHelper;
+        $this->productHelper  = $productHelper;
     }
 
     /**
@@ -86,14 +109,14 @@ class ProductOptions
                 break;
             case 'aw_giftcard':
                 /** @var \SM\Product\Repositories\ProductManagement\ProductOptions\AWGiftCard $awGC */
-                $awGC = $this->objectManager->create(
+                $awGC                  = $this->objectManager->create(
                     'SM\Product\Repositories\ProductManagement\ProductOptions\AWGiftCard'
                 );
                 $xOptions['gift_card'] = $awGC->getGiftCardOption($product);
                 break;
             case 'giftcard':
                 /** @var \SM\Product\Repositories\ProductManagement\ProductOptions\AWGiftCard $awGC */
-                $m2eeGC = $this->objectManager->create(
+                $m2eeGC                = $this->objectManager->create(
                     'SM\Product\Repositories\ProductManagement\ProductOptions\M2EEGiftCard'
                 );
                 $xOptions['gift_card'] = $m2eeGC->getGiftCardOption($product);
@@ -161,6 +184,7 @@ class ProductOptions
     {
         $this->resetProductInBlock($product);
         $this->catalogProduct->setSkipSaleableCheck(true);
+
         return json_decode($this->getConfigurableBlock()->getJsonConfig(), true);
     }
 
@@ -175,17 +199,40 @@ class ProductOptions
         $this->catalogProduct->setSkipSaleableCheck(true);
         $outputOptions = [];
         $options       = $this->getBundleBlock()->decorateArray($this->getBundleBlock()->getOptions());
+        $obValues      = [];
+        if ($this->integrateData->isExistPektsekyeOptionBundle()) {
+            $this->obBvalue = $this->objectManager->get('Pektsekye\OptionBundle\Model\ResourceModel\Bvalue');
+            $obValues       = $this->obBvalue->getValues($product->getId(), (int)$product->getStoreId());
+        }
         foreach ($options as $option) {
             $selections = [];
             if (is_array($option->getSelections())) {
                 foreach ($option->getSelections() as $selection) {
-                    $selectionData                = $selection->getData();
-                    $selectionData['id']          = $selectionData['entity_id'];
+                    $selectionData       = $selection->getData();
+                    $selectionData['id'] = $selectionData['entity_id'];
                     if (!empty($selectionData['tier_price'])) {
                         $selectionData['tier_prices'] = $selectionData['tier_price'];
                     } else {
                         $selectionData['tier_prices'] = $this->getProductPrice()
                                                              ->getExistingPrices($selection, 'tier_price', true);
+                    }
+                    $image = isset($selectionData['image']) ? $selectionData['image'] : '';
+
+                    if ($this->integrateData->isExistPektsekyeOptionBundle()) {
+                        $image = isset($obValues[$selectionData['selection_id']]['image']) ? $obValues[$selectionData['selection_id']]['image'] : '';
+                    }
+                    $imageUrl = '';
+                    if (!empty($image)) {
+                        $imageUrl = $this->imageHelper->init($product, 'product_page_image_small', ['type' => 'thumbnail'])
+                                                      ->resize(200)
+                                                      ->setImageFile($image)
+                                                      ->getUrl();
+                    }
+                    $selectionData['image']       = $imageUrl;
+                    $selectionData['small_image'] = $imageUrl;
+                    $selectionData['thumbnail']   = $imageUrl;
+                    if (isset($selectionData['product_id'])) {
+                        $selectionData['additional_data'] = $this->productHelper->getProductAdditionalData($selectionData['product_id']);
                     }
                     $selections[] = $selectionData;
                 }
@@ -216,14 +263,14 @@ class ProductOptions
         $_hasAssociatedProducts = count($_associatedProducts) > 0;
         if ($_hasAssociatedProducts) {
             foreach ($_associatedProducts as $_item) {
-                $_itemData                = $_item->getData();
+                $_itemData = $_item->getData();
                 if (!empty($_itemData['tier_price'])) {
                     $_itemData['tier_prices'] = $_itemData['tier_price'];
                 } else {
                     $_itemData['tier_prices'] = $this->getProductPrice()
                                                      ->getExistingPrices($_item, 'tier_price', true);
                 }
-                $outputOptions[]          = $_itemData;
+                $outputOptions[] = $_itemData;
             }
         }
 
@@ -263,7 +310,6 @@ class ProductOptions
     {
         return $this->registry;
     }
-
 
     /**
      * @param $product
