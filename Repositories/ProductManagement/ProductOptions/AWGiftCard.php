@@ -43,6 +43,7 @@ class AWGiftCard extends ProductOptions
         if ($product->getData('aw_gc_type') == GiftcardType::VALUE_PHYSICAL) {
             $isPhysicalValue = true;
         }
+        $giftCardType = $this->getGiftCardType($product);
         return [
             'isAllowPreview'      => $this->getGiftCardViewBlock()->isAllowPreview(),
             'isAllowDesignSelect' => $this->getGiftCardViewBlock()->isAllowDesignSelect(),
@@ -53,6 +54,7 @@ class AWGiftCard extends ProductOptions
             'isAllowOpenAmount'   => $this->getGiftCardViewBlock()->isAllowOpenAmount(),
             'isFixedAmount'       => $this->getGiftCardViewBlock()->isFixedAmount(),
             'isPhysicalValue'     => $isPhysicalValue,
+            'giftCardType'        => $giftCardType,
 
             'getAmountOptions'     => $this->getGiftCardViewBlock()->getAmountOptions(),
             'getAmountOptionValue' => $this->getGiftCardViewBlock()->getAmountOptionValue(),
@@ -61,6 +63,30 @@ class AWGiftCard extends ProductOptions
             'getFixedAmount'       => $this->getGiftCardViewBlock()->getFixedAmount(),
             'getTimezones'         => $this->getGiftCardViewBlock()->getTimezones(),
             'getGiftcardTemplates' => $this->getGiftCardViewBlock()->getGiftcardTemplates(),
+
+            'codePool' => $product->getData('aw_gc_pool') ? $product->getData('aw_gc_pool') : false
         ];
+    }
+
+    /**
+     * @param Product $product
+     * @return string
+     */
+    protected function getGiftCardType(Product $product)
+    {
+        $giftCardType = $product->getData('aw_gc_type');
+        switch ($giftCardType) {
+            case \Aheadworks\Giftcard\Model\Source\Entity\Attribute\GiftcardType::VALUE_VIRTUAL:
+                return 'virtual';
+
+            case \Aheadworks\Giftcard\Model\Source\Entity\Attribute\GiftcardType::VALUE_PHYSICAL:
+                return 'physical';
+
+            case \Aheadworks\Giftcard\Model\Source\Entity\Attribute\GiftcardType::VALUE_COMBINED:
+                return 'combined';
+
+            default:
+                return '';
+        }
     }
 }
