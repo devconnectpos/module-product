@@ -219,7 +219,7 @@ class ProductOptions
                     $image = isset($selectionData['image']) ? $selectionData['image'] : '';
 
                     if ($this->integrateData->isExistPektsekyeOptionBundle()) {
-                        $image = isset($obValues[$selectionData['selection_id']]['image']) ? $obValues[$selectionData['selection_id']]['image'] : '';
+                        $image = !empty($obValues[$selectionData['selection_id']]['image']) ? $obValues[$selectionData['selection_id']]['image'] : $image;
                     }
                     $imageUrl = '';
                     if (!empty($image)) {
