@@ -654,8 +654,8 @@ class ProductManagement extends ServiceAbstract
         $collection->setFlag("has_stock_status_filter", true);
         if (!$collection->isEnabledFlat()) {
             $collection->addAttributeToSelect('*');
-            $collection->joinAttribute('status', 'catalog_product/status', 'entity_id', null, 'inner');
-            $collection->joinAttribute('visibility', 'catalog_product/visibility', 'entity_id', null, 'inner');
+            $collection->joinAttribute('status', 'catalog_product/status', 'entity_id', null, 'inner', 0);
+            $collection->joinAttribute('visibility', 'catalog_product/visibility', 'entity_id', null, 'inner', 0);
             $collection->getSelect()->join(
                 ['cataloginventory_stock_item' => $collection->getTable('cataloginventory_stock_item')],
                 'cataloginventory_stock_item.product_id=e.entity_id',
@@ -666,16 +666,7 @@ class ProductManagement extends ServiceAbstract
         }
         $collection->setCurPage($searchCriteria->getData('currentPage'));
         $collection->setPageSize($searchCriteria->getData('pageSize'));
-
-        //if ($searchCriteria->getData('status')) {
-        //    // 1: Enable/ 2: Disable
-        //    $collection->addAttributeToFilter('status', ['in' => $searchCriteria->getData('status')]);
-        //}
-        //
-        //if ($searchCriteria->getData('visibility')) {
-        //    // 1: Not Visible Individually / 2: Catalog / 3: Search / 4: Catalog, Search
-        //    $collection->addAttributeToFilter('visibility', ['in' => $searchCriteria->getData('visibility')]);
-        //}
+        
         if (!!$searchCriteria->getData('categoryId') && $searchCriteria->getData('categoryId') !== 'null') {
             //$category = $this->_categoryFactory->create()->load($searchCriteria->getData('categoryId'));
             //$collection->addCategoryFilter($category);
@@ -721,6 +712,9 @@ class ProductManagement extends ServiceAbstract
                 // 1: Not Visible Individually / 2: Catalog / 3: Search / 4: Catalog, Search
                 $collection->addAttributeToFilter('visibility', ['in' => $searchCriteria->getData('visibility')]);
             }
+	        if ($searchCriteria->getData('status')) {
+		        $collection->addAttributeToFilter('status', ['in' => $searchCriteria->getData('status')]);
+	        }
             $collection = $this->searchProductOnlineCollection($searchCriteria, $collection);
         }
 
@@ -784,7 +778,6 @@ class ProductManagement extends ServiceAbstract
             } else {
                 $collection->setOrder('entity_id', 'desc');
             }
-//            $collection = $this->refactorCollectionForPWA($searchCriteria, $collection);
         }
         $this->registry->unregister('disableFlatProduct');
 
@@ -858,7 +851,7 @@ class ProductManagement extends ServiceAbstract
             }
         } else {
             if ($searchCriteria->getData('showOutStock') != 1) {
-                $collection->getSelect()->where('cataloginventory_stock_item.is_in_stock = 1');
+                $collection->getSelect()->where('cataloginventory_stock_item.is_in_stock = 1 OR cataloginventory_stock_item.manage_stock = 0');
             }
             $searchValue = $searchCriteria->getData('searchValue');
             $searchValue = str_replace(',', ' ', $searchValue);
