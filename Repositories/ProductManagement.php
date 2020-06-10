@@ -134,6 +134,7 @@ class ProductManagement extends ServiceAbstract
      * @var \Magento\Catalog\Model\CategoryRepository
      */
     protected $categoryRepository;
+
     /**
      * Notifier Pool
      *
@@ -141,6 +142,11 @@ class ProductManagement extends ServiceAbstract
      */
     protected $notifierPool;
     protected $configData;
+
+    /**
+     * @var \SM\Core\Api\Data\XProductFactory
+     */
+    protected $xProductFactory;
 
     /**
      * ProductManagement constructor.
@@ -200,7 +206,8 @@ class ProductManagement extends ServiceAbstract
         ScopeConfigInterface $scopeConfig,
         CategoryRepository $categoryRepository,
         NotifierPool $notifierPool,
-        Loader $configLoader
+        Loader $configLoader,
+        \SM\Core\Api\Data\XProductFactory $xProductFactory
     ) {
         $this->cache                        = $cache;
         $this->catalogProduct               = $catalogProduct;
@@ -225,6 +232,7 @@ class ProductManagement extends ServiceAbstract
         $this->categoryRepository           = $categoryRepository;
         $this->scopeConfig                  = $scopeConfig;
         $this->notifierPool                 = $notifierPool;
+        $this->xProductFactory              = $xProductFactory;
         parent::__construct($requestInterface, $dataConfig, $storeManager);
         $this->configLoader = $configLoader;
     }
@@ -411,13 +419,10 @@ class ProductManagement extends ServiceAbstract
 
                 foreach ($collection as $item) {
                     try {
-                        $product = $this->getProductModel()->load($item->getId());
-
                         $items[] = $this->processXProduct(
-                            $product,
+                            $item,
                             $storeId,
-                            WarehouseIntegrateManagement::getWarehouseId(),
-                            $item
+                            WarehouseIntegrateManagement::getWarehouseId()
                         );
                     } catch (\Exception $e) {
                         $this->addNotificationError($e->getMessage(), $item->getId());
@@ -554,15 +559,14 @@ class ProductManagement extends ServiceAbstract
      * @param \Magento\Catalog\Model\Product $product
      * @param                                $storeId
      * @param                                $warehouseId
-     * @param DataObject                     $item
      *
      * @return \SM\Core\Api\Data\XProduct
      * @throws \Exception
      */
-    protected function processXProduct(\Magento\Catalog\Model\Product $product, $storeId, $warehouseId, $item = null)
+    protected function processXProduct(\Magento\Catalog\Model\Product $product, $storeId, $warehouseId)
     {
         /** @var \SM\Core\Api\Data\XProduct $xProduct */
-        $xProduct = new XProduct();
+        $xProduct = $this->xProductFactory->create();
         $xProduct->addData($product->getData());
 
         $xProduct->setData('tier_prices', $this->getProductPrice()->getExistingPrices($product, 'tier_price', true));
@@ -594,7 +598,7 @@ class ProductManagement extends ServiceAbstract
         } else {
             $xProduct->setData(
                 'stock_items',
-                $this->warehouseIntegrateManagement->getStockItem($product, $warehouseId, $item)
+                $this->warehouseIntegrateManagement->getStockItem($product, $warehouseId)
             );
         }
 
@@ -654,13 +658,13 @@ class ProductManagement extends ServiceAbstract
         $collection->setFlag("has_stock_status_filter", true);
         if (!$collection->isEnabledFlat()) {
             $collection->addAttributeToSelect('*');
-            $collection->joinAttribute('status', 'catalog_product/status', 'entity_id', null, 'inner', 0);
-            $collection->joinAttribute('visibility', 'catalog_product/visibility', 'entity_id', null, 'inner', 0);
-            $collection->getSelect()->join(
-                ['cataloginventory_stock_item' => $collection->getTable('cataloginventory_stock_item')],
-                'cataloginventory_stock_item.product_id=e.entity_id',
-                ['stock_status' => 'cataloginventory_stock_item.is_in_stock']
-            )->where("cataloginventory_stock_item.website_id=0");
+            $collection->joinAttribute('status', 'catalog_product/status', 'entity_id', null, 'inner');
+            $collection->joinAttribute('visibility', 'catalog_product/visibility', 'entity_id', null, 'inner');
+//            $collection->getSelect()->join(
+//                ['cataloginventory_stock_item' => $collection->getTable('cataloginventory_stock_item')],
+//                'cataloginventory_stock_item.product_id=e.entity_id',
+//                ['stock_status' => 'cataloginventory_stock_item.is_in_stock']
+//            )->where("cataloginventory_stock_item.website_id=0");
 
             $collection->addStoreFilter($storeId);
         }
