@@ -660,11 +660,11 @@ class ProductManagement extends ServiceAbstract
             $collection->addAttributeToSelect('*');
             $collection->joinAttribute('status', 'catalog_product/status', 'entity_id', null, 'inner');
             $collection->joinAttribute('visibility', 'catalog_product/visibility', 'entity_id', null, 'inner');
-//            $collection->getSelect()->join(
-//                ['cataloginventory_stock_item' => $collection->getTable('cataloginventory_stock_item')],
-//                'cataloginventory_stock_item.product_id=e.entity_id',
-//                ['stock_status' => 'cataloginventory_stock_item.is_in_stock']
-//            )->where("cataloginventory_stock_item.website_id=0");
+            $collection->getSelect()->join(
+                ['cataloginventory_stock_item' => $collection->getTable('cataloginventory_stock_item')],
+                'cataloginventory_stock_item.product_id=e.entity_id',
+                ['stock_status' => 'cataloginventory_stock_item.is_in_stock']
+            )->where("cataloginventory_stock_item.website_id=0");
 
             $collection->addStoreFilter($storeId);
         }
