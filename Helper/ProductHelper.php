@@ -28,10 +28,6 @@ class ProductHelper
      */
     protected $configLoader;
     /**
-     * @var \Magento\Catalog\Model\ProductFactory
-     */
-    private $productFactory;
-    /**
      * @var \Magento\Eav\Model\Entity\Type
      */
     protected $entityType;
@@ -46,16 +42,20 @@ class ProductHelper
     protected $scopeConfig;
 
     protected $configData;
-
-    public function __construct(
+	/**
+	 * @var \Magento\Catalog\Api\ProductRepositoryInterface
+	 */
+	private $productRepository;
+	
+	public function __construct(
         Loader $loader,
         Type $entityType,
         ObjectManagerInterface $objectManager,
-        ProductFactory $productFactory,
+        \Magento\Catalog\Api\ProductRepositoryInterface $productRepository,
         \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig
     ) {
         $this->scopeConfig = $scopeConfig;
-        $this->productFactory = $productFactory;
+		$this->productRepository = $productRepository;
         $this->configLoader = $loader;
         $this->entityType     = $entityType;
         $this->objectManager = $objectManager;
@@ -156,20 +156,13 @@ class ProductHelper
 
         return $attributeArray;
     }
-
-    /**
-     * @return  \Magento\Catalog\Model\Product
-     */
-    protected function getProductModel()
-    {
-        return $this->productFactory->create();
-    }
-
-    /**
-     * @param \Magento\Catalog\Model\Product | string $product
-     *
-     * @return array
-     */
+	
+	/**
+	 * @param \Magento\Catalog\Model\Product | string $product
+	 *
+	 * @return array
+	 * @throws \Magento\Framework\Exception\NoSuchEntityException
+	 */
     public function getProductAdditionalData($product)
     {
         $configData                     = $this->getConfigLoaderData();
@@ -177,7 +170,7 @@ class ProductHelper
         $additionalData                 = [];
 
         if (!$product instanceof Product) {
-            $product = $this->getProductModel()->load($product);
+            $product = $this->productRepository->getById($product);
         }
 
         if (!!$estimatedAvailabilityAttribute && $estimatedAvailabilityAttribute != '') {

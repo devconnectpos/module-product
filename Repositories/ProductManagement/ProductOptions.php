@@ -198,7 +198,7 @@ class ProductOptions
         $this->resetProductInBlock($product);
         $this->catalogProduct->setSkipSaleableCheck(true);
         $outputOptions = [];
-        $options       = $this->getBundleBlock()->decorateArray($this->getBundleBlock()->getOptions());
+        $options       = $this->getBundleBlock()->getOptions();
         $obValues      = [];
         if ($this->integrateData->isExistPektsekyeOptionBundle()) {
             $this->obBvalue = $this->objectManager->get('Pektsekye\OptionBundle\Model\ResourceModel\Bvalue');
@@ -246,6 +246,28 @@ class ProductOptions
             'options'    => $outputOptions,
             'type_price' => $product->getPriceType()
         ];
+    }
+
+    protected function getBundleOptionSelections(\Magento\Catalog\Model\Product $product)
+    {
+        /** @var \Magento\Bundle\Model\Product\Type $typeInstance */
+        $typeInstance = $product->getTypeInstance();
+        $typeInstance->setStoreFilter($product->getStoreId(), $product);
+        $optionCollection = $typeInstance->getOptionsCollection($product);
+        $selectionCollection = $typeInstance->getSelectionsCollection(
+            $typeInstance->getOptionsIds($product),
+            $product
+        );
+        $catalogRuleProcessor = \Magento\Framework\App\ObjectManager::getInstance()
+            ->get(\Magento\CatalogRule\Model\ResourceModel\Product\CollectionProcessor::class);
+        $catalogRuleProcessor->addPriceData($selectionCollection);
+        $selectionCollection->addTierPriceData();
+
+        return $optionCollection->appendSelections(
+            $selectionCollection,
+            false,
+            $this->catalogProduct->getSkipSaleableCheck()
+        );
     }
 
     /**
