@@ -30,10 +30,15 @@ class ProductMediaGalleryImages
     public function getMediaGalleryImages(Product $item)
     {
         if (!isset($this->cacheImage[$item->getId()])) {
+            if (empty($item->getMediaGalleryImages())) {
+                return [];
+            }
+
             $media = [];
             foreach ($item->getMediaGalleryImages() as $mediaGalleryImage) {
                 $media[] = $mediaGalleryImage['url'];
             }
+
             $this->cacheImage[$item->getId()] = $media;
         }
 
