@@ -569,6 +569,15 @@ class ProductManagement extends ServiceAbstract
         $xProduct = $this->xProductFactory->create();
         $xProduct->addData($product->getData());
 
+        try {
+            $printLabelAtt = $this->productHelper->getPrintLabelBarcodeAttribute();
+            if (isset($printLabelAtt)) {
+                $xProduct->setData('print_label_value', $product->getData($printLabelAtt));
+            }
+        } catch (\Exception $exception) {
+            $this->addNotificationError($exception->getMessage(), $product->getId());
+        }
+
         $xProduct->setData('tier_prices', $this->getProductPrice()->getExistingPrices($product, 'tier_price', true));
 
         $xProduct->setData('store_id', $storeId);
@@ -713,8 +722,14 @@ class ProductManagement extends ServiceAbstract
 
         if ($searchCriteria->getData('searchOnline') == 1) {
             if ($searchCriteria->getData('visibility')) {
+            	$visibility = $searchCriteria->getData('visibility');
+	            $additionalSearchFields = $this->productHelper->getProductAdditionAttribute();
+	            if (!strpos('1', $visibility) && in_array('ean', $additionalSearchFields)) {
+	                $visibility .= ',1';
+	            }
+
                 // 1: Not Visible Individually / 2: Catalog / 3: Search / 4: Catalog, Search
-                $collection->addAttributeToFilter('visibility', ['in' => $searchCriteria->getData('visibility')]);
+                $collection->addAttributeToFilter('visibility', ['in' => $visibility]);
             }
 	        if ($searchCriteria->getData('status')) {
 		        $collection->addAttributeToFilter('status', ['in' => $searchCriteria->getData('status')]);
