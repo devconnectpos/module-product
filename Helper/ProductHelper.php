@@ -98,6 +98,11 @@ class ProductHelper
         return $this->scopeConfig->getValue('pwa/product_category/pwa_show_product_visibility', 'stores', $storeID);
     }
 
+    public function getPrintLabelBarcodeAttribute()
+    {
+        return $this->scopeConfig->getValue('xretail/pos/print_label_barcode_attribute');
+    }
+
     /**
      * @return array|mixed
      */
