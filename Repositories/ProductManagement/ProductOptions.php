@@ -13,6 +13,7 @@ use Magento\Catalog\Model\ProductFactory;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Registry;
 use SM\Product\Helper\ProductHelper;
+use Magento\Catalog\Model\Product\Option;
 
 /**
  * Class ProductOptions
@@ -57,16 +58,22 @@ class ProductOptions
     protected $imageHelper;
 
     /**
+     * @var \Magento\Catalog\Model\Product\Option
+     */
+    protected $productSimpleOption;
+
+    /**
      * ProductOptions constructor.
      *
-     * @param ObjectManagerInterface           $objectManager
-     * @param Product                          $catalogProduct
-     * @param Registry                         $registry
-     * @param ProductFactory                   $productFactory
-     * @param ProductPrice                     $productPrice
-     * @param \SM\Integrate\Helper\Data        $integrateData
-     * @param \Magento\Catalog\Helper\Image    $imageHelper
-     * @param \SM\Product\Helper\ProductHelper $productHelper
+     * @param \Magento\Framework\ObjectManagerInterface               $objectManager
+     * @param \Magento\Catalog\Helper\Product                         $catalogProduct
+     * @param \Magento\Framework\Registry                             $registry
+     * @param \Magento\Catalog\Model\ProductFactory                   $productFactory
+     * @param \SM\Product\Repositories\ProductManagement\ProductPrice $productPrice
+     * @param \SM\Integrate\Helper\Data                               $integrateData
+     * @param \Magento\Catalog\Helper\Image                           $imageHelper
+     * @param \SM\Product\Helper\ProductHelper                        $productHelper
+     * @param \Magento\Catalog\Model\Product\Option                   $productSimpleOption
      */
     public function __construct(
         ObjectManagerInterface $objectManager,
@@ -76,7 +83,8 @@ class ProductOptions
         ProductPrice $productPrice,
         \SM\Integrate\Helper\Data $integrateData,
         \Magento\Catalog\Helper\Image $imageHelper,
-        ProductHelper $productHelper
+        ProductHelper $productHelper,
+        Option $productSimpleOption
     ) {
         $this->productFactory = $productFactory;
         $this->objectManager  = $objectManager;
@@ -86,6 +94,7 @@ class ProductOptions
         $this->integrateData  = $integrateData;
         $this->imageHelper    = $imageHelper;
         $this->productHelper  = $productHelper;
+        $this->productSimpleOption = $productSimpleOption;
     }
 
     /**
@@ -307,8 +316,9 @@ class ProductOptions
     protected function getCustomOptionsSimpleProduct(\Magento\Catalog\Model\Product $product)
     {
         $options = [];
-        if ($product->getOptions()) {
-            foreach ($product->getOptions() as $value) {
+        $customOptions = $this->productSimpleOption->getProductOptionCollection($product);
+        if ($customOptions && (is_object($customOptions) || is_array($customOptions))) {
+            foreach ($customOptions as $value) {
                 $custom_option      = $value->getData();
                 $values             = $value->getValues();
                 $custom_option_data = [];
