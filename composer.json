@@ -2,7 +2,7 @@
 	"name": "connectpos/module-product",
 	"description": "N/A",
 	"type": "magento2-module",
-	"version": "20.07.03",
+	"version": "20.07.13",
 	"license": [
 		"proprietary"
 	],
