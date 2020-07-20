@@ -16,6 +16,7 @@ use Magento\Store\Model\StoreManagerInterface;
 use SM\Product\Helper\ProductHelper;
 use SM\Product\Repositories\ProductManagement\ProductOptions;
 use SM\Product\Repositories\ProductManagement\ProductPrice;
+use Magento\Catalog\Model\Product\Option;
 
 class M2EEGiftCard extends ProductOptions
 {
@@ -28,7 +29,25 @@ class M2EEGiftCard extends ProductOptions
      * @var \Magento\Store\Model\Store
      */
     protected $storeManager;
+    /**
+     * @var \Magento\Catalog\Model\Product\Option
+     */
+    protected $productSimpleOption;
 
+    /**
+     * M2EEGiftCard constructor.
+     *
+     * @param \Magento\Framework\ObjectManagerInterface               $objectManager
+     * @param \Magento\Catalog\Helper\Product                         $catalogProduct
+     * @param \Magento\Framework\Registry                             $registry
+     * @param \Magento\Catalog\Model\ProductFactory                   $productFactory
+     * @param \SM\Product\Repositories\ProductManagement\ProductPrice $productPrice
+     * @param \Magento\Store\Model\StoreManagerInterface              $storeManager
+     * @param \SM\Integrate\Helper\Data                               $integrateData
+     * @param \Magento\Catalog\Helper\Image                           $imageHelper
+     * @param \SM\Product\Helper\ProductHelper                        $productHelper
+     * @param \Magento\Catalog\Model\Product\Option                   $productSimpleOption
+     */
     public function __construct(
         ObjectManagerInterface $objectManager,
         Product $catalogProduct,
@@ -38,10 +57,11 @@ class M2EEGiftCard extends ProductOptions
         StoreManagerInterface $storeManager,
         \SM\Integrate\Helper\Data $integrateData,
         \Magento\Catalog\Helper\Image $imageHelper,
-        ProductHelper $productHelper
+        ProductHelper $productHelper,
+        Option $productSimpleOption
     ) {
         $this->storeManager  = $storeManager;
-        parent::__construct($objectManager, $catalogProduct, $registry, $productFactory, $productPrice, $integrateData, $imageHelper, $productHelper);
+        parent::__construct($objectManager, $catalogProduct, $registry, $productFactory, $productPrice, $integrateData, $imageHelper, $productHelper, $productSimpleOption);
     }
 
     /**
