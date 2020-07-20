@@ -31,8 +31,11 @@ class ProductMediaGalleryImages
     {
         if (!isset($this->cacheImage[$item->getId()])) {
             $media = [];
-            foreach ($item->getMediaGalleryImages() as $mediaGalleryImage) {
-                $media[] = $mediaGalleryImage['url'];
+            $mediaGalleryImages = $item->getMediaGalleryImages();
+            if (isset($mediaGalleryImages) && is_array($mediaGalleryImages) && count($mediaGalleryImages) > 0) {
+                foreach ($mediaGalleryImages as $mediaGalleryImage) {
+                    $media[] = $mediaGalleryImage['url'];
+                }
             }
             $this->cacheImage[$item->getId()] = $media;
         }
