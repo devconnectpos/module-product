@@ -23,11 +23,13 @@ class State
         $this->registry = $registry;
     }
 
-    public function afterIsFlatEnabled()
-    {
+    public function afterIsFlatEnabled(
+    	\Magento\Catalog\Model\Indexer\Product\Flat\State $subject,
+	    $result
+    ) {
         if ($this->registry->registry('disableFlatProduct')) {
             return false;
         }
-        return true;
+        return $result;
     }
 }
