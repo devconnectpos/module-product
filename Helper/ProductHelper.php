@@ -7,13 +7,18 @@
 
 namespace SM\Product\Helper;
 
+use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\ProductFactory;
 use Magento\Config\Model\Config\Loader;
 use Magento\Eav\Model\Entity\Attribute\Set;
 use Magento\Eav\Model\Entity\Type;
 use Magento\Eav\Model\ResourceModel\Entity\Attribute\Collection;
+use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\ObjectManagerInterface;
+use Magento\CatalogInventory\Api\StockRegistryInterface;
+use BoostMyShop\AdvancedStock\Model\ResourceModel\Warehouse\Item\CollectionFactory as WarehouseItemCollection;
 
 class ProductHelper
 {
@@ -46,19 +51,33 @@ class ProductHelper
 	 * @var \Magento\Catalog\Api\ProductRepositoryInterface
 	 */
 	private $productRepository;
-	
+
+    /**
+     * @var StockRegistryInterface
+     */
+	protected $_stockRegistry;
+
+    /**
+     * @var WarehouseItemCollection
+     */
+	protected $_warehouseItemCollection;
+
 	public function __construct(
         Loader $loader,
         Type $entityType,
         ObjectManagerInterface $objectManager,
         \Magento\Catalog\Api\ProductRepositoryInterface $productRepository,
-        \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig
+        \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
+        StockRegistryInterface $stockRegistry,
+        WarehouseItemCollection $warehouseItemCollection
     ) {
         $this->scopeConfig = $scopeConfig;
 		$this->productRepository = $productRepository;
         $this->configLoader = $loader;
         $this->entityType     = $entityType;
         $this->objectManager = $objectManager;
+        $this->_stockRegistry = $stockRegistry;
+        $this->_warehouseItemCollection = $warehouseItemCollection;
     }
 
     public function getProductAdditionAttribute()
@@ -161,9 +180,9 @@ class ProductHelper
 
         return $attributeArray;
     }
-	
+
 	/**
-	 * @param \Magento\Catalog\Model\Product | string $product
+	 * @param Product | string $product
 	 *
 	 * @return array
 	 * @throws \Magento\Framework\Exception\NoSuchEntityException
@@ -192,5 +211,52 @@ class ProductHelper
         }
 
         return $this->configData;
+    }
+
+    /**
+     * @param int $productId
+     * @param int $websiteId
+     * @param int $warehouseId
+     * @param float $requestQty
+     * @throws LocalizedException
+     */
+    public function validateWarehouseQty($productId, $websiteId, $warehouseId, $requestQty)
+    {
+        try {
+            $product = $this->productRepository->getById($productId);
+        } catch (NoSuchEntityException $e) {
+            throw $e;
+        }
+
+
+        $stockRegistry = $this->_stockRegistry->getStockItem($product->getId(), $websiteId);
+        if ($stockRegistry->getBackorders() !== 0) {
+            return;
+        }
+
+        $warehouseCollection = $this->_warehouseItemCollection->create();
+        $warehouse = $warehouseCollection->addProductFilter($product->getId())
+            ->joinWarehouse()
+            ->addFieldToFilter('wi_warehouse_id', $warehouseId)
+            ->getFirstItem();
+
+        if ($requestQty > (float) $warehouse->getData('wi_available_quantity')) {
+            throw new LocalizedException(__(
+                'Kho hàng \'%1\' không có đủ số lượng cho sản phẩm %2 (%3)',
+                [$warehouse->getData('w_name'), $product->getName(), $product->getSku()]
+            ));
+        }
+    }
+
+    /**
+     * @param Product $product
+     * @param int $websiteId
+     * @return int
+     */
+    public function getProductBackorders($product, $websiteId)
+    {
+
+        $stockRegistry = $this->_stockRegistry->getStockItem($product->getId(), $websiteId);
+        return $stockRegistry->getBackorders();
     }
 }
