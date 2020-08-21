@@ -598,6 +598,9 @@ class ProductManagement extends ServiceAbstract
 
         $xProduct->setData('short_description', $product->getShortDescription());
 
+        $websiteId = $this->storeManager->getStore($storeId)->getWebsiteId();
+        $xProduct->setData('back_orders', $this->productHelper->getProductBackorders($product, $websiteId));
+
         // get stock_items
         if ((!$this->integrateData->isIntegrateWH() && !$this->integrateData->isMagentoInventory()) || !$warehouseId) {
             $xProduct->setData(
@@ -679,7 +682,7 @@ class ProductManagement extends ServiceAbstract
         }
         $collection->setCurPage($searchCriteria->getData('currentPage'));
         $collection->setPageSize($searchCriteria->getData('pageSize'));
-        
+
         if (!!$searchCriteria->getData('categoryId') && $searchCriteria->getData('categoryId') !== 'null') {
             //$category = $this->_categoryFactory->create()->load($searchCriteria->getData('categoryId'));
             //$collection->addCategoryFilter($category);
