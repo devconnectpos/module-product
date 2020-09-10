@@ -1,9 +1,4 @@
 <?php
-/**
- * Created by mr.vjcspy@gmail.com - khoild@smartosc.com.
- * Date: 25/11/2016
- * Time: 14:11
- */
 
 namespace SM\Product\Repositories\ProductManagement;
 
@@ -16,30 +11,62 @@ use Magento\Catalog\Model\Product;
  */
 class ProductMediaGalleryImages
 {
-
+    /**
+     * @var \SM\Product\Helper\ProductImageHelper
+     */
+    protected $productImageHelper;
+    /**
+     * @var Product\Gallery\ReadHandler
+     */
+    protected $galleryReadHandler;
+    
     /**
      * @var array
      */
     private $cacheImage = [];
-
+    
+    public function __construct(
+        \SM\Product\Helper\ProductImageHelper $productImageHelper,
+        \Magento\Catalog\Model\Product\Gallery\ReadHandler $galleryReadHandler
+    ) {
+        $this->productImageHelper = $productImageHelper;
+        $this->galleryReadHandler = $galleryReadHandler;
+    }
+    
     /**
-     * @param \Magento\Catalog\Model\Product $item
+     * @param Product $product
+     */
+    public function addGallery(Product $product)
+    {
+        $this->galleryReadHandler->execute($product);
+    }
+    
+    /**
+     * @param Product $product
      *
      * @return mixed
+     * @throws \Exception
      */
-    public function getMediaGalleryImages(Product $item)
+    public function getMediaGalleryImages(Product $product)
     {
-        if (!isset($this->cacheImage[$item->getId()])) {
+        if (!isset($this->cacheImage[$product->getId()])) {
+            $this->addGallery($product);
             $media = [];
-            $mediaGalleryImages = $item->getMediaGalleryImages();
-            if (isset($mediaGalleryImages) && is_array($mediaGalleryImages) && count($mediaGalleryImages) > 0) {
+            $mediaGalleryImages = $product->getMediaGalleryImages();
+            
+            if ($mediaGalleryImages && $mediaGalleryImages->getSize() > 0) {
                 foreach ($mediaGalleryImages as $mediaGalleryImage) {
                     $media[] = $mediaGalleryImage['url'];
                 }
             }
-            $this->cacheImage[$item->getId()] = $media;
+            
+            if (empty($media)) {
+                $media[] = $this->productImageHelper->getImageUrl($product);
+            }
+            
+            $this->cacheImage[$product->getId()] = $media;
         }
 
-        return $this->cacheImage[$item->getId()];
+        return $this->cacheImage[$product->getId()];
     }
 }
