@@ -657,6 +657,7 @@ class ProductManagement extends ServiceAbstract
     {
         $this->registry->register('disableFlatProduct', true);
         $storeId = $searchCriteria->getData('storeId');
+        $websiteId = $this->getStoreManager()->getStore($storeId)->getWebsiteId();
         if (is_null($storeId)) {
             throw new \Exception(__('Must have param storeId'));
         } else {
@@ -673,13 +674,13 @@ class ProductManagement extends ServiceAbstract
                 ['cataloginventory_stock_item' => $collection->getTable('cataloginventory_stock_item')],
                 'cataloginventory_stock_item.product_id=e.entity_id',
                 ['stock_status' => 'cataloginventory_stock_item.is_in_stock']
-            )->where("cataloginventory_stock_item.website_id=0");
+            )->where("cataloginventory_stock_item.website_id=0 OR cataloginventory_stock_item.website_id={$websiteId}");
 
             $collection->addStoreFilter($storeId);
         }
         $collection->setCurPage($searchCriteria->getData('currentPage'));
         $collection->setPageSize($searchCriteria->getData('pageSize'));
-        
+
         if (!!$searchCriteria->getData('categoryId') && $searchCriteria->getData('categoryId') !== 'null') {
             //$category = $this->_categoryFactory->create()->load($searchCriteria->getData('categoryId'));
             //$collection->addCategoryFilter($category);
@@ -722,18 +723,18 @@ class ProductManagement extends ServiceAbstract
 
         if ($searchCriteria->getData('searchOnline') == 1) {
             if ($searchCriteria->getData('visibility')) {
-            	$visibility = $searchCriteria->getData('visibility');
-	            $additionalSearchFields = $this->productHelper->getProductAdditionAttribute();
-	            if (!strpos('1', $visibility) && in_array('ean', $additionalSearchFields)) {
-	                $visibility .= ',1';
-	            }
+                $visibility = $searchCriteria->getData('visibility');
+                $additionalSearchFields = $this->productHelper->getProductAdditionAttribute();
+                if (!strpos('1', $visibility) && in_array('ean', $additionalSearchFields)) {
+                    $visibility .= ',1';
+                }
 
                 // 1: Not Visible Individually / 2: Catalog / 3: Search / 4: Catalog, Search
                 $collection->addAttributeToFilter('visibility', ['in' => $visibility]);
             }
-	        if ($searchCriteria->getData('status')) {
-		        $collection->addAttributeToFilter('status', ['in' => $searchCriteria->getData('status')]);
-	        }
+            if ($searchCriteria->getData('status')) {
+                $collection->addAttributeToFilter('status', ['in' => $searchCriteria->getData('status')]);
+            }
             $collection = $this->searchProductOnlineCollection($searchCriteria, $collection);
         }
 
