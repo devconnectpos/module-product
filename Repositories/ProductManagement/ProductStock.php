@@ -19,7 +19,11 @@ use Magento\CatalogInventory\Api\StockItemRepositoryInterface;
  */
 class ProductStock
 {
-
+    /**
+     * @var \Magento\Catalog\Api\ProductRepositoryInterface
+     */
+    protected $productRepository;
+    
     /**
      * @var \Magento\CatalogInventory\Api\StockItemCriteriaInterface
      */
@@ -28,19 +32,22 @@ class ProductStock
      * @var \Magento\CatalogInventory\Api\StockItemRepositoryInterface
      */
     private $stockItemRepository;
-
+    
     /**
      * ProductStock constructor.
      *
-     * @param \Magento\CatalogInventory\Api\StockItemCriteriaInterface   $stockItemCriteria
+     * @param \Magento\CatalogInventory\Api\StockItemCriteriaInterface $stockItemCriteria
      * @param \Magento\CatalogInventory\Api\StockItemRepositoryInterface $stockItemRepository
+     * @param \Magento\Catalog\Api\ProductRepositoryInterface $productRepository
      */
     public function __construct(
         StockItemCriteriaInterface $stockItemCriteria,
-        StockItemRepositoryInterface $stockItemRepository
+        StockItemRepositoryInterface $stockItemRepository,
+        \Magento\Catalog\Api\ProductRepositoryInterface $productRepository
     ) {
         $this->stockItemCriteria   = $stockItemCriteria;
         $this->stockItemRepository = $stockItemRepository;
+        $this->productRepository = $productRepository;
     }
 
     public function getStock(Product $product, $scope)
@@ -54,6 +61,10 @@ class ProductStock
         $stocks = $this->stockItemRepository->getList($this->stockItemCriteria)->getItems();
         if (is_array($stocks) && count($stocks) == 1) {
             $stock = array_values($stocks)[0];
+            if ($product->getTypeId() === 'configurable') {
+                $isInStock = $this->checkConfigurableProduct($product, $scope);
+                $stock->setData('is_in_stock', $isInStock);
+            }
             $listType = ['simple', 'virtual', 'giftcard', 'aw_giftcard', 'aw_giftcard2'];
             if (in_array($product->getType(), $listType)) {
                 if ($stock->getData('qty') > 0 && $stock->getData('is_in_stock') == 1) {
@@ -65,5 +76,21 @@ class ProductStock
             return $stock->getData();
         }
         return [];
+    }
+    
+    private function checkConfigurableProduct($product, $scope)
+    {
+        $children = $product->getTypeInstance()->getChildrenIds($product->getId());
+        $children = $children[0];
+        foreach ($children as $child) {
+            /** @var Product $p */
+            $p = $this->productRepository->getById($child);
+            $stock = $this->getStock($p, $scope);
+            if ($stock['is_in_stock'] == 1) {
+                return 1;
+            }
+        }
+    
+        return 0;
     }
 }
