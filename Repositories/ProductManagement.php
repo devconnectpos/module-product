@@ -20,6 +20,7 @@ use Magento\Framework\Registry;
 use Magento\Store\Model\StoreManagerInterface;
 use SM\Core\Api\Data\PWAProduct;
 use SM\Core\Api\Data\XProduct;
+use SM\Core\Api\Data\XProductFactory;
 use SM\Core\Model\DataObject;
 use SM\CustomSale\Helper\Data;
 use SM\Integrate\Model\WarehouseIntegrateManagement;
@@ -31,6 +32,7 @@ use SM\Product\Repositories\ProductManagement\ProductMediaGalleryImages;
 use SM\Product\Repositories\ProductManagement\ProductOptions;
 use SM\Product\Repositories\ProductManagement\ProductPrice;
 use SM\Product\Repositories\ProductManagement\ProductStock;
+use SM\XRetail\Helper\Data as RetailHelper;
 use SM\XRetail\Helper\DataConfig;
 use SM\XRetail\Repositories\Contract\ServiceAbstract;
 
@@ -63,6 +65,10 @@ class ProductManagement extends ServiceAbstract
      * @var \Magento\Config\Model\Config\Loader
      */
     protected $configLoader;
+    /**
+     * @var RetailHelper
+     */
+    protected $retailHelper;
     /**
      * @var \SM\Product\Repositories\ProductManagement\ProductOptions
      */
@@ -144,40 +150,41 @@ class ProductManagement extends ServiceAbstract
     protected $configData;
 
     /**
-     * @var \SM\Core\Api\Data\XProductFactory
+     * @var XProductFactory
      */
     protected $xProductFactory;
-
+    
     /**
      * ProductManagement constructor.
      *
-     * @param \Magento\Framework\Cache\FrontendInterface                           $cache
-     * @param \Magento\Catalog\Model\CategoryFactory                               $categoryFactory
-     * @param \Magento\Framework\App\RequestInterface                              $requestInterface
-     * @param \SM\XRetail\Helper\DataConfig                                        $dataConfig
-     * @param \Magento\Store\Model\StoreManagerInterface                           $storeManager
-     * @param \Magento\Catalog\Model\ProductFactory                                $productFactory
-     * @param \Magento\Catalog\Model\ResourceModel\Product\CollectionFactory       $collectionFactory
-     * @param \SM\Product\Repositories\ProductManagement\ProductOptions            $productOptions
-     * @param \Magento\Catalog\Model\Product\Media\Config                          $productMediaConfig
-     * @param \SM\Product\Repositories\ProductManagement\ProductAttribute          $productAttribute
-     * @param \SM\Product\Repositories\ProductManagement\ProductStock              $productStock
-     * @param \SM\Product\Repositories\ProductManagement\ProductPrice              $productPrice
+     * @param \Magento\Framework\Cache\FrontendInterface $cache
+     * @param \Magento\Catalog\Model\CategoryFactory $categoryFactory
+     * @param \Magento\Framework\App\RequestInterface $requestInterface
+     * @param \SM\XRetail\Helper\DataConfig $dataConfig
+     * @param \Magento\Store\Model\StoreManagerInterface $storeManager
+     * @param \Magento\Catalog\Model\ProductFactory $productFactory
+     * @param \Magento\Catalog\Model\ResourceModel\Product\CollectionFactory $collectionFactory
+     * @param \SM\Product\Repositories\ProductManagement\ProductOptions $productOptions
+     * @param \Magento\Catalog\Model\Product\Media\Config $productMediaConfig
+     * @param \SM\Product\Repositories\ProductManagement\ProductAttribute $productAttribute
+     * @param \SM\Product\Repositories\ProductManagement\ProductStock $productStock
+     * @param \SM\Product\Repositories\ProductManagement\ProductPrice $productPrice
      * @param \SM\Product\Repositories\ProductManagement\ProductMediaGalleryImages $productMediaGalleryImages
-     * @param \Magento\Catalog\Helper\Product                                      $catalogProduct
-     * @param \SM\CustomSale\Helper\Data                                           $customSaleHelper
-     * @param \Magento\Framework\Event\ManagerInterface                            $eventManagement
-     * @param \SM\Integrate\Helper\Data                                            $integrateData
-     * @param \SM\Integrate\Model\WarehouseIntegrateManagement                     $warehouseIntegrateManagement
-     * @param \SM\Product\Helper\ProductHelper                                     $productHelper
-     * @param \SM\Product\Helper\ProductImageHelper                                $productImageHelper
-     * @param \Magento\Framework\Registry                                          $registry
-     * @param \Magento\Eav\Api\AttributeSetRepositoryInterface                     $attributeSet
-     * @param \Magento\Eav\Model\ResourceModel\Entity\Attribute                    $eavAttribute
-     * @param \Magento\Framework\App\Config\ScopeConfigInterface                   $scopeConfig
-     * @param \Magento\Catalog\Model\CategoryRepository                            $categoryRepository
-     * @param \Magento\Framework\Notification\NotifierInterface                    $notifierPool
-     * @param \Magento\Config\Model\Config\Loader                                  $configLoader
+     * @param \Magento\Catalog\Helper\Product $catalogProduct
+     * @param \SM\CustomSale\Helper\Data $customSaleHelper
+     * @param \Magento\Framework\Event\ManagerInterface $eventManagement
+     * @param \SM\Integrate\Helper\Data $integrateData
+     * @param \SM\Integrate\Model\WarehouseIntegrateManagement $warehouseIntegrateManagement
+     * @param \SM\Product\Helper\ProductHelper $productHelper
+     * @param \SM\Product\Helper\ProductImageHelper $productImageHelper
+     * @param \Magento\Framework\Registry $registry
+     * @param \Magento\Eav\Api\AttributeSetRepositoryInterface $attributeSet
+     * @param \Magento\Eav\Model\ResourceModel\Entity\Attribute $eavAttribute
+     * @param \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig
+     * @param \Magento\Catalog\Model\CategoryRepository $categoryRepository
+     * @param \Magento\Framework\Notification\NotifierInterface $notifierPool
+     * @param XProductFactory $xProductFactory
+     * @param RetailHelper $retailHelper
      */
     public function __construct(
         FrontendInterface $cache,
@@ -206,8 +213,8 @@ class ProductManagement extends ServiceAbstract
         ScopeConfigInterface $scopeConfig,
         CategoryRepository $categoryRepository,
         NotifierPool $notifierPool,
-        Loader $configLoader,
-        \SM\Core\Api\Data\XProductFactory $xProductFactory
+        XProductFactory $xProductFactory,
+        RetailHelper $retailHelper
     ) {
         $this->cache                        = $cache;
         $this->catalogProduct               = $catalogProduct;
@@ -233,8 +240,9 @@ class ProductManagement extends ServiceAbstract
         $this->scopeConfig                  = $scopeConfig;
         $this->notifierPool                 = $notifierPool;
         $this->xProductFactory              = $xProductFactory;
+        $this->retailHelper                 = $retailHelper;
+
         parent::__construct($requestInterface, $dataConfig, $storeManager);
-        $this->configLoader = $configLoader;
     }
 
     /**
@@ -416,14 +424,23 @@ class ProductManagement extends ServiceAbstract
                 // Unknown why table "cataloginventory_stock_status" hasn't status of product
                 //(maybe bms_warehouse cause this)
                 $collection->setFlag("has_stock_status_filter", true);
-
+                $showOutOfStock = $this->retailHelper->getStoreConfig('xretail/pos/show_outofstock_product');
+                
                 foreach ($collection as $item) {
                     try {
-                        $items[] = $this->processXProduct(
+                        $xProduct =  $this->processXProduct(
                             $item,
                             $storeId,
                             WarehouseIntegrateManagement::getWarehouseId()
                         );
+
+                        if ($searchCriteria->getData('searchOnline') == 1
+                            && !$showOutOfStock
+                            && !$xProduct['stock_items']['is_in_stock']) {
+                            continue;
+                        }
+    
+                        $items[] = $xProduct;
                     } catch (\Exception $e) {
                         $this->addNotificationError($e->getMessage(), $item->getId());
                     }
@@ -854,6 +871,9 @@ class ProductManagement extends ServiceAbstract
 
     public function searchProductOnlineCollection($searchCriteria, $collection)
     {
+    
+        
+        
         if ($searchCriteria->getData('isFindProduct') == 1) {
             if ($searchCriteria->getData('isViewDetail') && $searchCriteria->getData('isViewDetail') == true) {
                 $product      = $this->getProductModel()->load($searchCriteria->getData('searchValue'));
