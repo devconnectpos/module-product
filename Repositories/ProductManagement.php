@@ -410,7 +410,9 @@ class ProductManagement extends ServiceAbstract
         );
 
         if ($loadingData->getData(CacheKeeper::$IS_PULL_FROM_CACHE) === true
-            && $searchCriteria->getData('searchOnline') != 1) {
+            && $searchCriteria->getData('searchOnline') != 1
+            && $searchCriteria->getData('realTime') != 1
+        ) {
             $items = $loadingData->getData('items');
             $this->getSearchResult()->setCacheTime($loadingData->getData('cache_time'));
         } else {
