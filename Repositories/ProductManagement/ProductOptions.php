@@ -8,6 +8,7 @@
 
 namespace SM\Product\Repositories\ProductManagement;
 
+use Magento\Catalog\Api\ProductCustomOptionRepositoryInterface;
 use Magento\Catalog\Helper\Product;
 use Magento\Catalog\Model\ProductFactory;
 use Magento\Framework\ObjectManagerInterface;
@@ -58,9 +59,9 @@ class ProductOptions
     protected $imageHelper;
 
     /**
-     * @var \Magento\Catalog\Model\Product\Option
+     * @var ProductCustomOptionRepositoryInterface
      */
-    protected $productSimpleOption;
+    private $customOptionRepository;
 
     /**
      * ProductOptions constructor.
@@ -73,7 +74,7 @@ class ProductOptions
      * @param \SM\Integrate\Helper\Data                               $integrateData
      * @param \Magento\Catalog\Helper\Image                           $imageHelper
      * @param \SM\Product\Helper\ProductHelper                        $productHelper
-     * @param \Magento\Catalog\Model\Product\Option                   $productSimpleOption
+     * @param ProductCustomOptionRepositoryInterface                  $customOptionRepository
      */
     public function __construct(
         ObjectManagerInterface $objectManager,
@@ -84,7 +85,7 @@ class ProductOptions
         \SM\Integrate\Helper\Data $integrateData,
         \Magento\Catalog\Helper\Image $imageHelper,
         ProductHelper $productHelper,
-        Option $productSimpleOption
+        ProductCustomOptionRepositoryInterface $customOptionRepository
     ) {
         $this->productFactory = $productFactory;
         $this->objectManager  = $objectManager;
@@ -94,7 +95,7 @@ class ProductOptions
         $this->integrateData  = $integrateData;
         $this->imageHelper    = $imageHelper;
         $this->productHelper  = $productHelper;
-        $this->productSimpleOption = $productSimpleOption;
+        $this->customOptionRepository = $customOptionRepository;
     }
 
     /**
@@ -161,7 +162,7 @@ class ProductOptions
      */
     protected function getConfigurableBlock()
     {
-        return $this->objectManager->create('\Magento\ConfigurableProduct\Block\Product\View\Type\Configurable');
+        return $this->objectManager->create('\SM\Product\Repositories\ProductManagement\ProductOptions\Configurable');
     }
 
     /**
@@ -316,20 +317,13 @@ class ProductOptions
     protected function getCustomOptionsSimpleProduct(\Magento\Catalog\Model\Product $product)
     {
         $options = [];
-        $customOptions = $this->productSimpleOption->getProductOptionCollection($product);
-        if ($customOptions && (is_object($customOptions) || is_array($customOptions))) {
-            foreach ($customOptions as $value) {
-                $custom_option      = $value->getData();
-                $values             = $value->getValues();
-                $custom_option_data = [];
-                if (is_array($values)) {
-                    foreach ($values as $valuess) {
-                        $custom_option_data[] = $valuess->getData();
-                    }
-                }
-                $custom_option['data'] = $custom_option_data;
-                $options[]             = $custom_option;
-            }
+        $customOptions = $this->customOptionRepository->getList($product->getSku());
+
+        /** @var \Magento\Catalog\Model\Product\Option $option */
+        foreach ($customOptions as $option) {
+            $customOption = $option->getData();
+            $customOption['data'] = $option->getValuesCollection()->getData();
+            $options[] = $customOption;
         }
 
         return $options;
