@@ -7,6 +7,7 @@
 
 namespace SM\Product\Repositories\ProductManagement\ProductOptions;
 
+use Magento\Catalog\Api\ProductCustomOptionRepositoryInterface;
 use Magento\Catalog\Helper\Product;
 use Magento\Catalog\Model\ProductFactory;
 use Magento\Framework\ObjectManagerInterface;
@@ -47,6 +48,7 @@ class M2EEGiftCard extends ProductOptions
      * @param \Magento\Catalog\Helper\Image                           $imageHelper
      * @param \SM\Product\Helper\ProductHelper                        $productHelper
      * @param \Magento\Catalog\Model\Product\Option                   $productSimpleOption
+     * @param ProductCustomOptionRepositoryInterface                  $customOptionRepository
      */
     public function __construct(
         ObjectManagerInterface $objectManager,
@@ -58,10 +60,10 @@ class M2EEGiftCard extends ProductOptions
         \SM\Integrate\Helper\Data $integrateData,
         \Magento\Catalog\Helper\Image $imageHelper,
         ProductHelper $productHelper,
-        Option $productSimpleOption
+        ProductCustomOptionRepositoryInterface $customOptionRepository
     ) {
         $this->storeManager  = $storeManager;
-        parent::__construct($objectManager, $catalogProduct, $registry, $productFactory, $productPrice, $integrateData, $imageHelper, $productHelper, $productSimpleOption);
+        parent::__construct($objectManager, $catalogProduct, $registry, $productFactory, $productPrice, $integrateData, $imageHelper, $productHelper, $customOptionRepository);
     }
 
     /**

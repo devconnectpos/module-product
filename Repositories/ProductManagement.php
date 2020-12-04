@@ -19,7 +19,6 @@ use Magento\Framework\Notification\NotifierInterface as NotifierPool;
 use Magento\Framework\Registry;
 use Magento\Store\Model\StoreManagerInterface;
 use SM\Core\Api\Data\PWAProduct;
-use SM\Core\Api\Data\XProduct;
 use SM\Core\Api\Data\XProductFactory;
 use SM\Core\Model\DataObject;
 use SM\CustomSale\Helper\Data;
@@ -153,7 +152,7 @@ class ProductManagement extends ServiceAbstract
      * @var XProductFactory
      */
     protected $xProductFactory;
-    
+
     /**
      * ProductManagement constructor.
      *
@@ -328,7 +327,7 @@ class ProductManagement extends ServiceAbstract
     protected function processRelatedProduct(\Magento\Catalog\Model\Product $product, $storeId, $warehouseId)
     {
         /** @var \SM\Core\Api\Data\XProduct $xProduct */
-        $xProduct = new XProduct();
+        $xProduct = $this->xProductFactory->create();
         $xProduct->addData($product->getData());
 
         $xProduct->setData('store_id', $storeId);
@@ -427,7 +426,7 @@ class ProductManagement extends ServiceAbstract
                 //(maybe bms_warehouse cause this)
                 $collection->setFlag("has_stock_status_filter", true);
                 $showOutOfStock = $this->retailHelper->getStoreConfig('xretail/pos/show_outofstock_product');
-                
+
                 foreach ($collection as $item) {
                     try {
                         $xProduct =  $this->processXProduct(
@@ -441,7 +440,7 @@ class ProductManagement extends ServiceAbstract
                             && !$xProduct['stock_items']['is_in_stock']) {
                             continue;
                         }
-    
+
                         $items[] = $xProduct;
                     } catch (\Exception $e) {
                         $this->addNotificationError($e->getMessage(), $item->getId());
@@ -873,9 +872,9 @@ class ProductManagement extends ServiceAbstract
 
     public function searchProductOnlineCollection($searchCriteria, $collection)
     {
-    
-        
-        
+
+
+
         if ($searchCriteria->getData('isFindProduct') == 1) {
             if ($searchCriteria->getData('isViewDetail') && $searchCriteria->getData('isViewDetail') == true) {
                 $product      = $this->getProductModel()->load($searchCriteria->getData('searchValue'));
