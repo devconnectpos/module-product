@@ -7,6 +7,7 @@ use Magento\Catalog\Model\CategoryFactory;
 use Magento\Catalog\Model\CategoryRepository;
 use Magento\Catalog\Model\Product\Media\Config;
 use Magento\Catalog\Model\ProductFactory;
+use Magento\Catalog\Model\ResourceModel\Category\CollectionFactory as CategoryCollectionFactory;
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
 use Magento\Config\Model\Config\Loader;
 use Magento\Eav\Api\AttributeSetRepositoryInterface;
@@ -68,6 +69,10 @@ class ProductManagement extends ServiceAbstract
      * @var RetailHelper
      */
     protected $retailHelper;
+    /**
+     * @var CategoryCollectionFactory
+     */
+    protected $categoryCollectionFactory;
     /**
      * @var \SM\Product\Repositories\ProductManagement\ProductOptions
      */
@@ -152,7 +157,7 @@ class ProductManagement extends ServiceAbstract
      * @var XProductFactory
      */
     protected $xProductFactory;
-
+    
     /**
      * ProductManagement constructor.
      *
@@ -184,6 +189,7 @@ class ProductManagement extends ServiceAbstract
      * @param \Magento\Framework\Notification\NotifierInterface $notifierPool
      * @param XProductFactory $xProductFactory
      * @param RetailHelper $retailHelper
+     * @param CategoryCollectionFactory $categoryCollectionFactory
      */
     public function __construct(
         FrontendInterface $cache,
@@ -213,7 +219,8 @@ class ProductManagement extends ServiceAbstract
         CategoryRepository $categoryRepository,
         NotifierPool $notifierPool,
         XProductFactory $xProductFactory,
-        RetailHelper $retailHelper
+        RetailHelper $retailHelper,
+        CategoryCollectionFactory $categoryCollectionFactory
     ) {
         $this->cache                        = $cache;
         $this->catalogProduct               = $catalogProduct;
@@ -240,7 +247,8 @@ class ProductManagement extends ServiceAbstract
         $this->notifierPool                 = $notifierPool;
         $this->xProductFactory              = $xProductFactory;
         $this->retailHelper                 = $retailHelper;
-
+        $this->categoryCollectionFactory    = $categoryCollectionFactory;
+    
         parent::__construct($requestInterface, $dataConfig, $storeManager);
     }
 
@@ -345,7 +353,7 @@ class ProductManagement extends ServiceAbstract
         } else {
             $xProduct->setData(
                 'stock_items',
-                $this->warehouseIntegrateManagement->getStockItem($product, $warehouseId, $product)
+                $this->warehouseIntegrateManagement->getStockItem($product, $warehouseId)
             );
         }
 
@@ -521,8 +529,21 @@ class ProductManagement extends ServiceAbstract
                 if ($searchCriteria->getData('isViewDetail') === 'true') {
                     $pwaProduct->setData('related_product_ids', $this->getRelatedProductForPWA($product, $storeId));
                 }
-                $pwaProduct->setData('stock_items', $this->getProductStock()->getStock($product, 0));
+
+                if (!$this->integrateData->isIntegrateWH() && !$this->integrateData->isMagentoInventory()) {
+                    $pwaProduct->setData(
+                        'stock_items',
+                        $this->getProductStock()->getStock($product, 0)
+                    );
+                } else {
+                    $pwaProduct->setData(
+                        'stock_items',
+                        $this->warehouseIntegrateManagement->getStockItem($product, 0)
+                    );
+                }
+
                 $pwaProduct->setData('visibility', $product->getVisibility());
+                $pwaProduct->setData('custom_attributes', $this->getProductAttribute()->getCustomAttributes($product));
                 $items[] = $pwaProduct;
             } catch (\Exception $e) {
                 $this->addNotificationError($e->getMessage(), $item->getId());
@@ -647,8 +668,31 @@ class ProductManagement extends ServiceAbstract
         // additional data
         $additionalData = $this->productHelper->getProductAdditionalData($product);
         $xProduct->setData('additional_data', $additionalData);
+        $xProduct->setData('top_category', $this->getTopCategory($product));
 
         return $xProduct;
+    }
+    
+    protected function getTopCategory(\Magento\Catalog\Model\Product $product)
+    {
+        $categoryIds = $product->getCategoryIds();
+        $collection = $this->categoryCollectionFactory->create();
+        $collection->addIsActiveFilter();
+        $collection->addAttributeToFilter('entity_id', ['in' => $categoryIds]);
+        $collection->addAttributeToSelect('name');
+        $collection->addOrder('level', 'ASC');
+        
+        if ($collection->getSize() == 1) {
+            return $collection->getFirstItem()->getName();
+        } elseif ($collection->getSize() > 1) {
+            foreach ($collection as $category) {
+                if ($category->getData('level') == 1) {
+                    continue;
+                }
+                return $category->getName();
+            }
+        }
+        return null;
     }
 
     /**
