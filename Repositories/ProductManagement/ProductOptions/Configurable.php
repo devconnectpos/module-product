@@ -2,6 +2,7 @@
 
 namespace SM\Product\Repositories\ProductManagement\ProductOptions;
 
+use Magento\Framework\App\ObjectManager;
 class Configurable extends \Magento\ConfigurableProduct\Block\Product\View\Type\Configurable
 {
     /**
@@ -41,8 +42,10 @@ class Configurable extends \Magento\ConfigurableProduct\Block\Product\View\Type\
             $customerSession,
             $variationPrices
         );
-        $this->variationPrices = $variationPrices;
-        $this->localeFormat = $localeFormat;
+        $this->localeFormat = $localeFormat ?: ObjectManager::getInstance()->get(Format::class);
+        $this->variationPrices = $variationPrices ?: ObjectManager::getInstance()->get(
+            \Magento\ConfigurableProduct\Model\Product\Type\Configurable\Variations\Prices::class
+        );
     }
     
     public function getConfigurableJsonConfig()
