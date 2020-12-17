@@ -71,7 +71,7 @@ class Configurable extends \Magento\ConfigurableProduct\Block\Product\View\Type\
         }
     
         $config = array_merge($config, $this->_getAdditionalConfig());
-    
+
         return $this->jsonEncoder->encode($config);
     }
 }

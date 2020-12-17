@@ -195,7 +195,7 @@ class ProductOptions
         $this->resetProductInBlock($product);
         $this->catalogProduct->setSkipSaleableCheck(true);
 
-        return json_decode($this->getConfigurableBlock()->getJsonConfig(), true);
+        return json_decode($this->getConfigurableBlock()->getConfigurableJsonConfig(), true);
     }
 
     /**

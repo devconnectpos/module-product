@@ -23,7 +23,7 @@ class ProductStock
      * @var \Magento\Catalog\Api\ProductRepositoryInterface
      */
     protected $productRepository;
-    
+
     /**
      * @var \Magento\CatalogInventory\Api\StockItemCriteriaInterface
      */
@@ -32,7 +32,7 @@ class ProductStock
      * @var \Magento\CatalogInventory\Api\StockItemRepositoryInterface
      */
     private $stockItemRepository;
-    
+
     /**
      * ProductStock constructor.
      *
@@ -73,11 +73,12 @@ class ProductStock
                     $stock->setData('is_in_stock', '0');
                 }
             }
+
             return $stock->getData();
         }
         return [];
     }
-    
+
     private function checkConfigurableProduct($product, $scope)
     {
         $children = $product->getTypeInstance()->getChildrenIds($product->getId());
@@ -90,7 +91,7 @@ class ProductStock
                 return 1;
             }
         }
-    
+
         return 0;
     }
 }

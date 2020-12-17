@@ -48,7 +48,6 @@ class ProductAttribute
      */
     public function getCustomAttributes(Product $product)
     {
-
         if ($this->dataConfig->getApiGetCustomAttributes()) {
             $customAtt  = [];
             $attributes = $this->getAllCustomAttributes();
@@ -71,8 +70,31 @@ class ProductAttribute
     public function getAllCustomAttributes()
     {
         $result     = [];
+        // Exclude some unneeded attributes, either because we do not use them or they are duplicated with those in top level
+        $excludeAttributes = [
+            'name',
+            'sku',
+            'image',
+            'thumbnail',
+            'small_image',
+            'options_container',
+            'msrp_display_actual_price_type',
+            'url_key',
+            'required_options',
+            'has_options',
+            'tax_class_id',
+            'category_ids',
+            'media_gallery',
+            'price',
+            'tier_price',
+            'visibility',
+            'status',
+            'quantity_and_stock_status',
+        ];
         $attributes = $this->productAttributeCollection
+            ->addFieldToFilter('attribute_code', ['nin' => $excludeAttributes])
             ->addVisibleFilter();
+
         if ($attributes != null && $attributes->count() > 0) {
             foreach ($attributes as $attribute) {
                 $result[] = ['value' => $attribute->getAttributeCode(), 'key' => $attribute->getFrontendLabel()];
