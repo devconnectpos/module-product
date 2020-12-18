@@ -3,6 +3,8 @@
 namespace SM\Product\Repositories\ProductManagement\ProductOptions;
 
 use Magento\Framework\App\ObjectManager;
+use Magento\Framework\Locale\Format;
+
 class Configurable extends \Magento\ConfigurableProduct\Block\Product\View\Type\Configurable
 {
     /**
@@ -13,7 +15,7 @@ class Configurable extends \Magento\ConfigurableProduct\Block\Product\View\Type\
      * @var \Magento\Framework\Locale\Format|null
      */
     protected $localeFormat;
-    
+
     public function __construct(
         \Magento\Catalog\Block\Product\Context $context,
         \Magento\Framework\Stdlib\ArrayUtils $arrayUtils,
@@ -47,15 +49,15 @@ class Configurable extends \Magento\ConfigurableProduct\Block\Product\View\Type\
             \Magento\ConfigurableProduct\Model\Product\Type\Configurable\Variations\Prices::class
         );
     }
-    
+
     public function getConfigurableJsonConfig()
     {
         $store = $this->getCurrentStore();
         $currentProduct = $this->getProduct();
-    
+
         $options = $this->helper->getOptions($currentProduct, $this->getAllowProducts());
         $attributesData = $this->configurableAttributeData->getAttributesData($currentProduct, $options);
-    
+
         $config = [
             'attributes' => $attributesData['attributes'],
             'template' => str_replace('%s', '<%- data.price %>', $store->getCurrentCurrency()->getOutputFormat()),
@@ -68,11 +70,11 @@ class Configurable extends \Magento\ConfigurableProduct\Block\Product\View\Type\
             'images' => $this->getOptionImages(),
             'index' => isset($options['index']) ? $options['index'] : [],
         ];
-    
+
         if ($currentProduct->hasPreconfiguredValues() && !empty($attributesData['defaultValues'])) {
             $config['defaultValues'] = $attributesData['defaultValues'];
         }
-    
+
         $config = array_merge($config, $this->_getAdditionalConfig());
 
         return $this->jsonEncoder->encode($config);
