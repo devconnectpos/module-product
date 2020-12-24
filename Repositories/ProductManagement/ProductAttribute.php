@@ -54,7 +54,10 @@ class ProductAttribute
             foreach ($attributes as $attribute) {
                 $val = $product->getData($attribute['value']);
                 if (!is_null($val)) {
-                    $customAtt[$attribute['value']] = $val;
+                    $customAtt[$attribute['value']] = [
+                        'label' => $attribute['key'] ?? '',
+                        'value' => $val,
+                    ];
                 }
             }
 
