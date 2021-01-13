@@ -157,7 +157,7 @@ class ProductManagement extends ServiceAbstract
      * @var XProductFactory
      */
     protected $xProductFactory;
-    
+
     /**
      * ProductManagement constructor.
      *
@@ -248,7 +248,7 @@ class ProductManagement extends ServiceAbstract
         $this->xProductFactory              = $xProductFactory;
         $this->retailHelper                 = $retailHelper;
         $this->categoryCollectionFactory    = $categoryCollectionFactory;
-    
+
         parent::__construct($requestInterface, $dataConfig, $storeManager);
     }
 
@@ -353,7 +353,7 @@ class ProductManagement extends ServiceAbstract
         } else {
             $xProduct->setData(
                 'stock_items',
-                $this->warehouseIntegrateManagement->getStockItem($product, $warehouseId)
+                $this->warehouseIntegrateManagement->getStockItem($product, $warehouseId, 0)
             );
         }
 
@@ -646,7 +646,7 @@ class ProductManagement extends ServiceAbstract
         } else {
             $xProduct->setData(
                 'stock_items',
-                $this->warehouseIntegrateManagement->getStockItem($product, $warehouseId)
+                $this->warehouseIntegrateManagement->getStockItem($product, $warehouseId, 0)
             );
         }
 
@@ -672,7 +672,7 @@ class ProductManagement extends ServiceAbstract
 
         return $xProduct;
     }
-    
+
     protected function getTopCategory(\Magento\Catalog\Model\Product $product)
     {
         $categoryIds = $product->getCategoryIds();
@@ -681,7 +681,7 @@ class ProductManagement extends ServiceAbstract
         $collection->addAttributeToFilter('entity_id', ['in' => $categoryIds]);
         $collection->addAttributeToSelect('name');
         $collection->addOrder('level', 'ASC');
-        
+
         if ($collection->getSize() == 1) {
             return $collection->getFirstItem()->getName();
         } elseif ($collection->getSize() > 1) {
@@ -916,9 +916,6 @@ class ProductManagement extends ServiceAbstract
 
     public function searchProductOnlineCollection($searchCriteria, $collection)
     {
-
-
-
         if ($searchCriteria->getData('isFindProduct') == 1) {
             if ($searchCriteria->getData('isViewDetail') && $searchCriteria->getData('isViewDetail') == true) {
                 $product      = $this->getProductModel()->load($searchCriteria->getData('searchValue'));
