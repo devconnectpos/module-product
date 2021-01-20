@@ -538,7 +538,7 @@ class ProductManagement extends ServiceAbstract
                 } else {
                     $pwaProduct->setData(
                         'stock_items',
-                        $this->warehouseIntegrateManagement->getStockItem($product, 0)
+                        $this->warehouseIntegrateManagement->getStockItem($product, 0, 0)
                     );
                 }
 
@@ -709,6 +709,20 @@ class ProductManagement extends ServiceAbstract
         return $this->processXProduct($product, $storeId, $warehouseId);
     }
 
+    public function getWebsiteId($storeId)
+    {
+        return $this->getStoreManager()->getStore($storeId)->getWebsiteId();
+    }
+
+    public function filterStockItem($collection, $websiteId)
+    {
+        $collection->getSelect()->join(
+            ['cataloginventory_stock_item' => $collection->getTable('cataloginventory_stock_item')],
+            'cataloginventory_stock_item.product_id=e.entity_id',
+            ['stock_status' => 'cataloginventory_stock_item.is_in_stock']
+        )->where("cataloginventory_stock_item.website_id=0 OR cataloginventory_stock_item.website_id={$websiteId}");
+    }
+
     /**
      * @param \Magento\Framework\DataObject $searchCriteria
      *
@@ -719,12 +733,14 @@ class ProductManagement extends ServiceAbstract
     {
         $this->registry->register('disableFlatProduct', true);
         $storeId = $searchCriteria->getData('storeId');
-        $websiteId = $this->getStoreManager()->getStore($storeId)->getWebsiteId();
+
         if (is_null($storeId)) {
             throw new \Exception(__('Must have param storeId'));
         } else {
             $this->getStoreManager()->setCurrentStore($storeId);
         }
+        $websiteId = $this->getWebsiteId($storeId);
+
         /** @var \Magento\Catalog\Model\ResourceModel\Product\Collection $collection */
         $collection = $this->collectionFactory->create();
         $collection->setFlag("has_stock_status_filter", true);
@@ -732,12 +748,7 @@ class ProductManagement extends ServiceAbstract
             $collection->addAttributeToSelect('*');
             $collection->joinAttribute('status', 'catalog_product/status', 'entity_id', null, 'inner');
             $collection->joinAttribute('visibility', 'catalog_product/visibility', 'entity_id', null, 'inner');
-            $collection->getSelect()->join(
-                ['cataloginventory_stock_item' => $collection->getTable('cataloginventory_stock_item')],
-                'cataloginventory_stock_item.product_id=e.entity_id',
-                ['stock_status' => 'cataloginventory_stock_item.is_in_stock']
-            )->where("cataloginventory_stock_item.website_id=0 OR cataloginventory_stock_item.website_id={$websiteId}");
-
+            $this->filterStockItem($collection, $websiteId);
             $collection->addStoreFilter($storeId);
         }
         $collection->setCurPage($searchCriteria->getData('currentPage'));
