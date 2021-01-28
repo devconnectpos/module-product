@@ -105,4 +105,37 @@ class ProductAttribute
         }
         return $result;
     }
+
+    public function getStoreFrontAttributes($product, array $excludeAttr = [])
+    {
+        $data = [];
+        $attributes = $product->getAttributes();
+        foreach ($attributes as $attribute) {
+            if ($this->isVisibleOnFrontend($attribute, $excludeAttr)) {
+                $value = $attribute->getFrontend()->getValue($product);
+                
+                if ($value instanceof \Magento\Framework\Phrase) {
+                    $value = (string)$value;
+                } elseif ($attribute->getFrontendInput() == 'price' && is_string($value)) {
+                    $value = $this->priceCurrency->convertAndFormat($value);
+                }
+                
+                if (is_string($value) && strlen(trim($value))) {
+                    $data[$attribute->getAttributeCode()] = [
+                        'label' => $attribute->getStoreLabel(),
+                        'value' => $value,
+                        'code' => $attribute->getAttributeCode(),
+                    ];
+                }
+            }
+        }
+        return $data;
+    }
+
+    protected function isVisibleOnFrontend(
+        \Magento\Eav\Model\Entity\Attribute\AbstractAttribute $attribute,
+        array $excludeAttr
+    ) {
+        return ($attribute->getIsVisibleOnFront() && !in_array($attribute->getAttributeCode(), $excludeAttr));
+    }
 }
