@@ -40,7 +40,7 @@ class ProductManagement extends ServiceAbstract
 {
 
     /**
-     * @var \Magento\Catalog\Model\Product
+     * @var \Magento\Catalog\Model\CategoryFactory
      */
     protected $_categoryFactory;
 
@@ -521,6 +521,7 @@ class ProductManagement extends ServiceAbstract
                 $pwaProduct = new PWAProduct();
 
                 $pwaProduct->addData($product->getData());
+                $pwaProduct->setData('category_paths', $this->getCategoryPaths($product));
                 $pwaProduct->setData('origin_image', $this->productImageHelper->getImageUrl($product));
                 $pwaProduct->setData('customizable_options', $this->getProductOptions()->getCustomizableOptions($product));
                 $pwaProduct->setData('x_options', $this->getProductOptions()->getOptions($product));
@@ -544,6 +545,10 @@ class ProductManagement extends ServiceAbstract
 
                 $pwaProduct->setData('visibility', $product->getVisibility());
                 $pwaProduct->setData('custom_attributes', $this->getProductAttribute()->getCustomAttributes($product));
+                $pwaProduct->setData(
+                    'store_front_attributes',
+                    $this->getProductAttribute()->getStoreFrontAttributes($product)
+                );
                 $items[] = $pwaProduct;
             } catch (\Exception $e) {
                 $this->addNotificationError($e->getMessage(), $item->getId());
@@ -628,6 +633,10 @@ class ProductManagement extends ServiceAbstract
         $xProduct->setData('media_gallery', $this->productMediaGalleryImages->getMediaGalleryImages($product));
 
         $xProduct->setData('custom_attributes', $this->getProductAttribute()->getCustomAttributes($product));
+        $xProduct->setData(
+            'store_front_attributes',
+            $this->getProductAttribute()->getStoreFrontAttributes($product)
+        );
         // get options
         $xProduct->setData('x_options', $this->getProductOptions()->getOptions($product));
 
@@ -670,7 +679,23 @@ class ProductManagement extends ServiceAbstract
         $xProduct->setData('additional_data', $additionalData);
         $xProduct->setData('top_category', $this->getTopCategory($product));
 
+        $xProduct->setData('category_paths', $this->getCategoryPaths($product));
+
         return $xProduct;
+    }
+    
+    /**
+     * @param \Magento\Catalog\Model\Product $product
+     * @return array
+     */
+    protected function getCategoryPaths(\Magento\Catalog\Model\Product $product)
+    {
+        $categoryIds = $product->getCategoryIds();
+        $categories = [];
+        foreach ($categoryIds as $categoryId) {
+            $categories[$categoryId] = $this->_categoryFactory->create()->load($categoryId)->getPath();
+        }
+        return $categories;
     }
 
     protected function getTopCategory(\Magento\Catalog\Model\Product $product)
