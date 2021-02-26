@@ -1,10 +1,9 @@
 <?php
 namespace SM\Product\Repositories\ProductManagement;
 
+use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\ResourceModel\Product\Attribute\Collection;
-use Magento\Catalog \Model\Product;
 use SM\XRetail\Helper\DataConfig;
-
 
 /**
  * Class ProductAttribute
@@ -23,6 +22,10 @@ class ProductAttribute
      */
     protected $productAttributeCollection;
     /**
+     * @var \Magento\Framework\Pricing\PriceCurrencyInterface
+     */
+    protected $priceCurrency;
+    /**
      * @var \SM\XRetail\Helper\DataConfig
      */
     private $dataConfig;
@@ -31,14 +34,17 @@ class ProductAttribute
      * ProductAttribute constructor.
      *
      * @param \Magento\Catalog\Model\ResourceModel\Product\Attribute\Collection $productAttributeCollection
-     * @param \SM\XRetail\Helper\DataConfig                                     $dataConfig
+     * @param \SM\XRetail\Helper\DataConfig $dataConfig
+     * @param \Magento\Framework\Pricing\PriceCurrencyInterface $priceCurrency
      */
     public function __construct(
         Collection $productAttributeCollection,
-        DataConfig $dataConfig
+        DataConfig $dataConfig,
+        \Magento\Framework\Pricing\PriceCurrencyInterface $priceCurrency
     ) {
-        $this->dataConfig                 = $dataConfig;
+        $this->dataConfig = $dataConfig;
         $this->productAttributeCollection = $productAttributeCollection;
+        $this->priceCurrency = $priceCurrency;
     }
 
     /**
@@ -113,13 +119,13 @@ class ProductAttribute
         foreach ($attributes as $attribute) {
             if ($this->isVisibleOnFrontend($attribute, $excludeAttr)) {
                 $value = $attribute->getFrontend()->getValue($product);
-                
+
                 if ($value instanceof \Magento\Framework\Phrase) {
                     $value = (string)$value;
                 } elseif ($attribute->getFrontendInput() == 'price' && is_string($value)) {
                     $value = $this->priceCurrency->convertAndFormat($value);
                 }
-                
+
                 if (is_string($value) && strlen(trim($value))) {
                     $data[$attribute->getAttributeCode()] = [
                         'label' => $attribute->getStoreLabel(),

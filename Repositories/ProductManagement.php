@@ -345,10 +345,15 @@ class ProductManagement extends ServiceAbstract
         $xProduct->setData('media_gallery', $this->productMediaGalleryImages->getMediaGalleryImages($product));
 
         // get stock_items
-        if (!$this->integrateData->isIntegrateWH() || !$warehouseId) {
+        if ((!$this->integrateData->isIntegrateWH() && !$this->integrateData->isMagestoreInventory()) || !$warehouseId) {
             $xProduct->setData(
                 'stock_items',
                 $this->getProductStock()->getStock($product, 0)
+            );
+        } elseif ($this->integrateData->isMagestoreInventory()) {
+            $xProduct->setData(
+                'stock_items',
+                $this->warehouseIntegrateManagement->getStockItem($product, $warehouseId, $storeId)
             );
         } else {
             $xProduct->setData(
@@ -531,7 +536,7 @@ class ProductManagement extends ServiceAbstract
                     $pwaProduct->setData('related_product_ids', $this->getRelatedProductForPWA($product, $storeId));
                 }
 
-                if (!$this->integrateData->isIntegrateWH() && !$this->integrateData->isMagentoInventory()) {
+                if (!$this->integrateData->isIntegrateWH() && !$this->integrateData->isMagentoInventory() && !$this->integrateData->isMagestoreInventory()) {
                     $pwaProduct->setData(
                         'stock_items',
                         $this->getProductStock()->getStock($product, 0)
@@ -647,10 +652,15 @@ class ProductManagement extends ServiceAbstract
         $xProduct->setData('short_description', $product->getShortDescription());
 
         // get stock_items
-        if ((!$this->integrateData->isIntegrateWH() && !$this->integrateData->isMagentoInventory()) || !$warehouseId) {
+        if ((!$this->integrateData->isIntegrateWH() && !$this->integrateData->isMagentoInventory() && !$this->integrateData->isMagestoreInventory()) || !$warehouseId) {
             $xProduct->setData(
                 'stock_items',
                 $this->getProductStock()->getStock($product, 0)
+            );
+        } elseif ($this->integrateData->isMagestoreInventory()) {
+            $xProduct->setData(
+                'stock_items',
+                $this->warehouseIntegrateManagement->getStockItem($product, $warehouseId, $storeId)
             );
         } else {
             $xProduct->setData(
@@ -683,7 +693,7 @@ class ProductManagement extends ServiceAbstract
 
         return $xProduct;
     }
-    
+
     /**
      * @param \Magento\Catalog\Model\Product $product
      * @return array
@@ -805,7 +815,8 @@ class ProductManagement extends ServiceAbstract
             $collection->addFieldToFilter('entity_id', ['in' => explode(",", $ids)]);
         }
         if (($this->integrateData->isIntegrateWH()
-             || $this->integrateData->isMagentoInventory())
+             || $this->integrateData->isMagentoInventory()
+                || $this->integrateData->isMagestoreInventory())
             && ($searchCriteria->getData('warehouse_id')
                 || $searchCriteria->getData('warehouseId'))) {
             if (is_null($searchCriteria->getData('warehouse_id'))) {
