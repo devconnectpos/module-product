@@ -9,7 +9,6 @@ use Magento\Catalog\Model\Product\Media\Config;
 use Magento\Catalog\Model\ProductFactory;
 use Magento\Catalog\Model\ResourceModel\Category\CollectionFactory as CategoryCollectionFactory;
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
-use Magento\Config\Model\Config\Loader;
 use Magento\Eav\Api\AttributeSetRepositoryInterface;
 use Magento\Eav\Model\ResourceModel\Entity\Attribute;
 use Magento\Framework\App\Config\ScopeConfigInterface;
@@ -755,7 +754,12 @@ class ProductManagement extends ServiceAbstract
             ['cataloginventory_stock_item' => $collection->getTable('cataloginventory_stock_item')],
             'cataloginventory_stock_item.product_id=e.entity_id',
             ['stock_status' => 'cataloginventory_stock_item.is_in_stock']
-        )->where("cataloginventory_stock_item.website_id=0 OR cataloginventory_stock_item.website_id={$websiteId}");
+        );
+        if ($this->integrateData->isIntegrateWH()) {
+            $collection->getSelect()->where("cataloginventory_stock_item.website_id={$websiteId}");
+        } else {
+            $collection->getSelect()->where("cataloginventory_stock_item.website_id=0 OR cataloginventory_stock_item.website_id={$websiteId}");
+        }
     }
 
     /**
