@@ -343,25 +343,20 @@ class ProductManagement extends ServiceAbstract
 
         $xProduct->setData('media_gallery', $this->productMediaGalleryImages->getMediaGalleryImages($product));
 
-        // get stock_items
-        if ((!$this->integrateData->isIntegrateWH() && !$this->integrateData->isMagestoreInventory()) || !$warehouseId) {
-            $xProduct->setData(
-                'stock_items',
-                $this->getProductStock()->getStock($product, 0)
-            );
-        } elseif ($this->integrateData->isMagestoreInventory()) {
-            $xProduct->setData(
-                'stock_items',
-                $this->warehouseIntegrateManagement->getStockItem($product, $warehouseId, $storeId)
-            );
-        } else {
-            $xProduct->setData(
-                'stock_items',
-                $this->warehouseIntegrateManagement->getStockItem($product, $warehouseId, 0)
-            );
-        }
+        $xProduct->setData('stock_items', $this->getStockItem($product, $warehouseId, $storeId));
 
         return $xProduct;
+    }
+
+    protected function getStockItem($product, $warehouseId, $storeId)
+    {
+        // get stock_items
+        if ((!$this->integrateData->isIntegrateWH() && !$this->integrateData->isMagestoreInventory()) || !$warehouseId) {
+            return $this->getProductStock()->getStock($product, 0);
+        } elseif ($this->integrateData->isMagestoreInventory()) {
+            return $this->warehouseIntegrateManagement->getStockItem($product, $warehouseId, $storeId);
+        }
+        return $this->warehouseIntegrateManagement->getStockItem($product, $warehouseId, 0);
     }
 
     /**
