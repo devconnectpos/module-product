@@ -601,14 +601,14 @@ class ProductManagement extends ServiceAbstract
     }
 
     /**
-     * @param \Magento\Catalog\Model\Product $product
+     * @param \Magento\Catalog\Model\Product|\Magento\Catalog\Api\Data\ProductInterface $product
      * @param                                $storeId
      * @param                                $warehouseId
      *
      * @return \SM\Core\Api\Data\XProduct
      * @throws \Exception
      */
-    protected function processXProduct(\Magento\Catalog\Model\Product $product, $storeId, $warehouseId)
+    public function processXProduct($product, $storeId, $warehouseId)
     {
         /** @var \SM\Core\Api\Data\XProduct $xProduct */
         $xProduct = $this->xProductFactory->create();
