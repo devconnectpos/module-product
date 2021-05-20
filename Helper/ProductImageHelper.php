@@ -144,6 +144,13 @@ class ProductImageHelper extends AbstractHelper
     public function getImageUrl(Product $product)
     {
         if (is_null($product->getImage()) || $product->getImage() == 'no_selection' || !$product->getImage()) {
+            $mediaGalleryImages = $product->getMediaGalleryImages();
+
+            if ($mediaGalleryImages && $mediaGalleryImages->getSize() > 0) {
+                $firstImage = $mediaGalleryImages->getFirstItem();
+                return $firstImage['url'];
+            }
+
             $imageUrl = null;
         } else {
             $imageUrl = $this->resize($product->getImage());
