@@ -5,6 +5,7 @@ namespace SM\Product\Repositories;
 use Magento\Catalog\Helper\Product;
 use Magento\Catalog\Model\CategoryFactory;
 use Magento\Catalog\Model\CategoryRepository;
+use Magento\Catalog\Model\Product\Attribute\Repository;
 use Magento\Catalog\Model\Product\Media\Config;
 use Magento\Catalog\Model\ProductFactory;
 use Magento\Catalog\Model\ResourceModel\Category\CollectionFactory as CategoryCollectionFactory;
@@ -158,37 +159,52 @@ class ProductManagement extends ServiceAbstract
     protected $xProductFactory;
 
     /**
+     * @var Repository
+     */
+    protected $attributeRepository;
+
+    /**
+     * @var null|bool
+     */
+    protected $isStatusSearchable = null;
+
+    /**
+     * @var null|bool
+     */
+    protected $isVisibilitySearchable = null;
+
+    /**
      * ProductManagement constructor.
      *
-     * @param \Magento\Framework\Cache\FrontendInterface $cache
-     * @param \Magento\Catalog\Model\CategoryFactory $categoryFactory
-     * @param \Magento\Framework\App\RequestInterface $requestInterface
-     * @param \SM\XRetail\Helper\DataConfig $dataConfig
-     * @param \Magento\Store\Model\StoreManagerInterface $storeManager
-     * @param \Magento\Catalog\Model\ProductFactory $productFactory
-     * @param \Magento\Catalog\Model\ResourceModel\Product\CollectionFactory $collectionFactory
-     * @param \SM\Product\Repositories\ProductManagement\ProductOptions $productOptions
-     * @param \Magento\Catalog\Model\Product\Media\Config $productMediaConfig
-     * @param \SM\Product\Repositories\ProductManagement\ProductAttribute $productAttribute
-     * @param \SM\Product\Repositories\ProductManagement\ProductStock $productStock
-     * @param \SM\Product\Repositories\ProductManagement\ProductPrice $productPrice
+     * @param \Magento\Framework\Cache\FrontendInterface                           $cache
+     * @param \Magento\Catalog\Model\CategoryFactory                               $categoryFactory
+     * @param \Magento\Framework\App\RequestInterface                              $requestInterface
+     * @param \SM\XRetail\Helper\DataConfig                                        $dataConfig
+     * @param \Magento\Store\Model\StoreManagerInterface                           $storeManager
+     * @param \Magento\Catalog\Model\ProductFactory                                $productFactory
+     * @param \Magento\Catalog\Model\ResourceModel\Product\CollectionFactory       $collectionFactory
+     * @param \SM\Product\Repositories\ProductManagement\ProductOptions            $productOptions
+     * @param \Magento\Catalog\Model\Product\Media\Config                          $productMediaConfig
+     * @param \SM\Product\Repositories\ProductManagement\ProductAttribute          $productAttribute
+     * @param \SM\Product\Repositories\ProductManagement\ProductStock              $productStock
+     * @param \SM\Product\Repositories\ProductManagement\ProductPrice              $productPrice
      * @param \SM\Product\Repositories\ProductManagement\ProductMediaGalleryImages $productMediaGalleryImages
-     * @param \Magento\Catalog\Helper\Product $catalogProduct
-     * @param \SM\CustomSale\Helper\Data $customSaleHelper
-     * @param \Magento\Framework\Event\ManagerInterface $eventManagement
-     * @param \SM\Integrate\Helper\Data $integrateData
-     * @param \SM\Integrate\Model\WarehouseIntegrateManagement $warehouseIntegrateManagement
-     * @param \SM\Product\Helper\ProductHelper $productHelper
-     * @param \SM\Product\Helper\ProductImageHelper $productImageHelper
-     * @param \Magento\Framework\Registry $registry
-     * @param \Magento\Eav\Api\AttributeSetRepositoryInterface $attributeSet
-     * @param \Magento\Eav\Model\ResourceModel\Entity\Attribute $eavAttribute
-     * @param \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig
-     * @param \Magento\Catalog\Model\CategoryRepository $categoryRepository
-     * @param \Magento\Framework\Notification\NotifierInterface $notifierPool
-     * @param XProductFactory $xProductFactory
-     * @param RetailHelper $retailHelper
-     * @param CategoryCollectionFactory $categoryCollectionFactory
+     * @param \Magento\Catalog\Helper\Product                                      $catalogProduct
+     * @param \SM\CustomSale\Helper\Data                                           $customSaleHelper
+     * @param \Magento\Framework\Event\ManagerInterface                            $eventManagement
+     * @param \SM\Integrate\Helper\Data                                            $integrateData
+     * @param \SM\Integrate\Model\WarehouseIntegrateManagement                     $warehouseIntegrateManagement
+     * @param \SM\Product\Helper\ProductHelper                                     $productHelper
+     * @param \SM\Product\Helper\ProductImageHelper                                $productImageHelper
+     * @param \Magento\Framework\Registry                                          $registry
+     * @param \Magento\Eav\Api\AttributeSetRepositoryInterface                     $attributeSet
+     * @param \Magento\Eav\Model\ResourceModel\Entity\Attribute                    $eavAttribute
+     * @param \Magento\Framework\App\Config\ScopeConfigInterface                   $scopeConfig
+     * @param \Magento\Catalog\Model\CategoryRepository                            $categoryRepository
+     * @param \Magento\Framework\Notification\NotifierInterface                    $notifierPool
+     * @param XProductFactory                                                      $xProductFactory
+     * @param RetailHelper                                                         $retailHelper
+     * @param CategoryCollectionFactory                                            $categoryCollectionFactory
      */
     public function __construct(
         FrontendInterface $cache,
@@ -219,34 +235,36 @@ class ProductManagement extends ServiceAbstract
         NotifierPool $notifierPool,
         XProductFactory $xProductFactory,
         RetailHelper $retailHelper,
-        CategoryCollectionFactory $categoryCollectionFactory
+        CategoryCollectionFactory $categoryCollectionFactory,
+        Repository $attributeRepository
     ) {
-        $this->cache                        = $cache;
-        $this->catalogProduct               = $catalogProduct;
-        $this->productPrice                 = $productPrice;
-        $this->productAttribute             = $productAttribute;
-        $this->productFactory               = $productFactory;
-        $this->collectionFactory            = $collectionFactory;
-        $this->customSalesHelper            = $customSaleHelper;
-        $this->productOptions               = $productOptions;
-        $this->productMediaConfig           = $productMediaConfig;
-        $this->productStock                 = $productStock;
-        $this->productMediaGalleryImages    = $productMediaGalleryImages;
-        $this->eventManagement              = $eventManagement;
+        $this->cache = $cache;
+        $this->catalogProduct = $catalogProduct;
+        $this->productPrice = $productPrice;
+        $this->productAttribute = $productAttribute;
+        $this->productFactory = $productFactory;
+        $this->collectionFactory = $collectionFactory;
+        $this->customSalesHelper = $customSaleHelper;
+        $this->productOptions = $productOptions;
+        $this->productMediaConfig = $productMediaConfig;
+        $this->productStock = $productStock;
+        $this->productMediaGalleryImages = $productMediaGalleryImages;
+        $this->eventManagement = $eventManagement;
         $this->warehouseIntegrateManagement = $warehouseIntegrateManagement;
-        $this->integrateData                = $integrateData;
-        $this->productHelper                = $productHelper;
-        $this->productImageHelper           = $productImageHelper;
-        $this->_eavAttribute                = $eavAttribute;
-        $this->registry                     = $registry;
-        $this->attributeSet                 = $attributeSet;
-        $this->_categoryFactory             = $categoryFactory;
-        $this->categoryRepository           = $categoryRepository;
-        $this->scopeConfig                  = $scopeConfig;
-        $this->notifierPool                 = $notifierPool;
-        $this->xProductFactory              = $xProductFactory;
-        $this->retailHelper                 = $retailHelper;
-        $this->categoryCollectionFactory    = $categoryCollectionFactory;
+        $this->integrateData = $integrateData;
+        $this->productHelper = $productHelper;
+        $this->productImageHelper = $productImageHelper;
+        $this->_eavAttribute = $eavAttribute;
+        $this->registry = $registry;
+        $this->attributeSet = $attributeSet;
+        $this->_categoryFactory = $categoryFactory;
+        $this->categoryRepository = $categoryRepository;
+        $this->scopeConfig = $scopeConfig;
+        $this->notifierPool = $notifierPool;
+        $this->xProductFactory = $xProductFactory;
+        $this->retailHelper = $retailHelper;
+        $this->categoryCollectionFactory = $categoryCollectionFactory;
+        $this->attributeRepository = $attributeRepository;
 
         parent::__construct($requestInterface, $dataConfig, $storeManager);
     }
@@ -297,7 +315,7 @@ class ProductManagement extends ServiceAbstract
                 'warehouse_id'
             )
         );
-        $items   = [];
+        $items = [];
         $storeId = $this->getStoreManager()->getStore()->getId();
 
         $productId = $searchCriteria->getData('productId');
@@ -319,8 +337,8 @@ class ProductManagement extends ServiceAbstract
         }
 
         return $this->getSearchResult()
-                    ->setSearchCriteria($searchCriteria)
-                    ->setItems($items);
+            ->setSearchCriteria($searchCriteria)
+            ->setItems($items);
     }
 
     /**
@@ -354,7 +372,8 @@ class ProductManagement extends ServiceAbstract
         if ((!$this->integrateData->isIntegrateWH()
                 && !$this->integrateData->isMagentoInventory()
                 && !$this->integrateData->isMagestoreInventory())
-            || !$warehouseId) {
+            || !$warehouseId
+        ) {
             return $this->getProductStock()->getStock($product, 0);
         }
 
@@ -391,7 +410,7 @@ class ProductManagement extends ServiceAbstract
         }
 
         $collection = $this->getProductCollection($searchCriteria);
-        $storeId    = $this->getStoreManager()->getStore()->getId();
+        $storeId = $this->getStoreManager()->getStore()->getId();
 
         if (is_null($searchCriteria->getData('warehouse_id'))) {
             WarehouseIntegrateManagement::setWarehouseId(
@@ -409,7 +428,7 @@ class ProductManagement extends ServiceAbstract
             [
                 'collection'      => $collection,
                 'search_criteria' => $searchCriteria,
-                'items'           => $items
+                'items'           => $items,
             ]
         );
         $this->eventManagement->dispatch(
@@ -438,7 +457,7 @@ class ProductManagement extends ServiceAbstract
 
                 foreach ($collection as $item) {
                     try {
-                        $xProduct =  $this->processXProduct(
+                        $xProduct = $this->processXProduct(
                             $item,
                             $storeId,
                             WarehouseIntegrateManagement::getWarehouseId()
@@ -446,7 +465,8 @@ class ProductManagement extends ServiceAbstract
 
                         if ($searchCriteria->getData('searchOnline') == 1
                             && !$showOutOfStock
-                            && !$xProduct['stock_items']['is_in_stock']) {
+                            && !$xProduct['stock_items']['is_in_stock']
+                        ) {
                             continue;
                         }
 
@@ -461,17 +481,17 @@ class ProductManagement extends ServiceAbstract
             $this->eventManagement->dispatch(
                 'after_load_x_product',
                 [
-                    'loading_data' => $loadingData
+                    'loading_data' => $loadingData,
                 ]
             );
         }
 
         return $this->getSearchResult()
-                    ->setSearchCriteria($searchCriteria)
-                    ->setIsLoadFromCache($loadingData->getData(CacheKeeper::$IS_PULL_FROM_CACHE))
-                    ->setItems($items)
-                    ->setTotalCount($collection->getSize())
-                    ->setLastPageNumber($collection->getLastPageNumber());
+            ->setSearchCriteria($searchCriteria)
+            ->setIsLoadFromCache($loadingData->getData(CacheKeeper::$IS_PULL_FROM_CACHE))
+            ->setItems($items)
+            ->setTotalCount($collection->getSize())
+            ->setLastPageNumber($collection->getLastPageNumber());
     }
 
     /**
@@ -494,14 +514,14 @@ class ProductManagement extends ServiceAbstract
         $items = [];
         if ($searchCriteria->getData('categoryId')) {
             $id_category = $searchCriteria->getData('categoryId');
-            $storeId     = $searchCriteria->getData('storeId');
-            $category    = $this->categoryRepository->get($id_category, $storeId);
+            $storeId = $searchCriteria->getData('storeId');
+            $category = $this->categoryRepository->get($id_category, $storeId);
             if ($category->getData('is_active') === '0') {
                 return $this->getSearchResult()
-                            ->setSearchCriteria($searchCriteria)
-                            ->setItems($items)
-                            ->setTotalCount(0)
-                            ->setLastPageNumber(1);
+                    ->setSearchCriteria($searchCriteria)
+                    ->setItems($items)
+                    ->setTotalCount(0)
+                    ->setLastPageNumber(1);
             }
         }
 
@@ -557,10 +577,10 @@ class ProductManagement extends ServiceAbstract
         }
 
         return $this->getSearchResult()
-                    ->setSearchCriteria($searchCriteria)
-                    ->setItems($items)
-                    ->setTotalCount($collection->getSize())
-                    ->setLastPageNumber($collection->getLastPageNumber());
+            ->setSearchCriteria($searchCriteria)
+            ->setItems($items)
+            ->setTotalCount($collection->getSize())
+            ->setLastPageNumber($collection->getLastPageNumber());
     }
 
     public function checkRelatedProduct($product)
@@ -576,7 +596,7 @@ class ProductManagement extends ServiceAbstract
     public function getRelatedProductForPWA($product, $storeId)
     {
         $relatedProductCollection = $product->getRelatedProductCollection()->addStoreFilter($storeId)->getItems();
-        $items                    = [];
+        $items = [];
         foreach ($relatedProductCollection as $relatedProduct) {
             try {
                 $related = $this->getProductModel()->load($relatedProduct->getId());
@@ -602,8 +622,8 @@ class ProductManagement extends ServiceAbstract
 
     /**
      * @param \Magento\Catalog\Model\Product|\Magento\Catalog\Api\Data\ProductInterface $product
-     * @param                                $storeId
-     * @param                                $warehouseId
+     * @param                                                                           $storeId
+     * @param                                                                           $warehouseId
      *
      * @return \SM\Core\Api\Data\XProduct
      * @throws \Exception
@@ -656,7 +676,7 @@ class ProductManagement extends ServiceAbstract
                 $this->productHelper->getProductAdditionAttribute(),
                 function ($result, $field) use ($product) {
                     if (!!$field && is_string($field)) {
-                        return $result . ' ' . json_encode($product->getData($field));
+                        return $result.' '.json_encode($product->getData($field));
                     } else {
                         return $result;
                     }
@@ -677,6 +697,7 @@ class ProductManagement extends ServiceAbstract
 
     /**
      * @param \Magento\Catalog\Model\Product $product
+     *
      * @return array
      */
     protected function getCategoryPaths(\Magento\Catalog\Model\Product $product)
@@ -686,6 +707,7 @@ class ProductManagement extends ServiceAbstract
         foreach ($categoryIds as $categoryId) {
             $categories[$categoryId] = $this->_categoryFactory->create()->load($categoryId)->getPath();
         }
+
         return $categories;
     }
 
@@ -705,9 +727,11 @@ class ProductManagement extends ServiceAbstract
                 if ($category->getData('level') == 1) {
                     continue;
                 }
+
                 return $category->getName();
             }
         }
+
         return null;
     }
 
@@ -767,8 +791,12 @@ class ProductManagement extends ServiceAbstract
         $collection->setFlag("has_stock_status_filter", true);
         if (!$collection->isEnabledFlat()) {
             $collection->addAttributeToSelect('*');
-            $collection->joinAttribute('status', 'catalog_product/status', 'entity_id', null, 'inner');
-            $collection->joinAttribute('visibility', 'catalog_product/visibility', 'entity_id', null, 'inner');
+            if ($this->isStatusSearchable()) {
+                $collection->joinAttribute('status', 'catalog_product/status', 'entity_id', null, 'inner');
+            }
+            if ($this->isVisibilitySearchable()) {
+                $collection->joinAttribute('visibility', 'catalog_product/visibility', 'entity_id', null, 'inner');
+            }
             $this->filterStockItem($collection, $websiteId);
             $collection->addStoreFilter($storeId);
         }
@@ -782,7 +810,7 @@ class ProductManagement extends ServiceAbstract
                 ['category_product' => $collection->getTable('catalog_category_product')],
                 'category_product.product_id = e.entity_id',
                 ['category_id' => 'category_product.category_id']
-            )->where('category_product.category_id =' . $searchCriteria->getData('categoryId'));
+            )->where('category_product.category_id ='.$searchCriteria->getData('categoryId'));
         }
 
         if ($searchCriteria->getData('typeId')) {
@@ -801,10 +829,11 @@ class ProductManagement extends ServiceAbstract
             $collection->addFieldToFilter('entity_id', ['in' => explode(",", $ids)]);
         }
         if (($this->integrateData->isIntegrateWH()
-             || $this->integrateData->isMagentoInventory()
+                || $this->integrateData->isMagentoInventory()
                 || $this->integrateData->isMagestoreInventory())
             && ($searchCriteria->getData('warehouse_id')
-                || $searchCriteria->getData('warehouseId'))) {
+                || $searchCriteria->getData('warehouseId'))
+        ) {
             if (is_null($searchCriteria->getData('warehouse_id'))) {
                 $id = $searchCriteria->getData('warehouseId');
             } else {
@@ -817,7 +846,7 @@ class ProductManagement extends ServiceAbstract
         }
 
         if ($searchCriteria->getData('searchOnline') == 1) {
-            if ($searchCriteria->getData('visibility')) {
+            if ($this->isVisibilitySearchable() && $searchCriteria->getData('visibility')) {
                 $visibility = $searchCriteria->getData('visibility');
                 $additionalSearchFields = $this->productHelper->getProductAdditionAttribute();
                 if (!strpos('1', $visibility) && in_array('ean', $additionalSearchFields)) {
@@ -827,7 +856,7 @@ class ProductManagement extends ServiceAbstract
                 // 1: Not Visible Individually / 2: Catalog / 3: Search / 4: Catalog, Search
                 $collection->addAttributeToFilter('visibility', ['in' => $visibility]);
             }
-            if ($searchCriteria->getData('status')) {
+            if ($this->isStatusSearchable() && $searchCriteria->getData('status')) {
                 $collection->addAttributeToFilter('status', ['in' => $searchCriteria->getData('status')]);
             }
             $collection = $this->searchProductOnlineCollection($searchCriteria, $collection);
@@ -837,10 +866,11 @@ class ProductManagement extends ServiceAbstract
             if ($searchCriteria->getData('isSearch') == 1
                 || ($searchCriteria->getData('isViewDetail')
                     && $searchCriteria->getData('isViewDetail')
-                       == true)) {
+                    == true)
+            ) {
                 $collection = $this->searchProductPWACollection($searchCriteria, $collection);
             }
-            if ($this->productHelper->getPWAProductAttributeStatus($searchCriteria->getData('storeId')) === 'no') {
+            if ($this->isStatusSearchable() && $this->productHelper->getPWAProductAttributeStatus($searchCriteria->getData('storeId')) === 'no') {
                 $collection->addAttributeToFilter('status', 1);
             }
             if (!!$searchCriteria->getData('categoryId') && $searchCriteria->getData('categoryId') != 'null') {
@@ -850,25 +880,28 @@ class ProductManagement extends ServiceAbstract
             // filter online
 
             if (($searchCriteria->getData('minPriceFields') == null || $searchCriteria->getData('minPriceFields') == '')
-                && ($searchCriteria->getData('maxPriceFields') !== null && $searchCriteria->getData('maxPriceFields') !== '')) {
+                && ($searchCriteria->getData('maxPriceFields') !== null && $searchCriteria->getData('maxPriceFields') !== '')
+            ) {
                 $collection->addPriceDataFieldFilter('%s <= %s', ['final_price', $searchCriteria->getData('maxPriceFields')])
-                           ->addFinalPrice();
+                    ->addFinalPrice();
             } elseif (($searchCriteria->getData('maxPriceFields') == null || $searchCriteria->getData('maxPriceFields') == '')
-                      && ($searchCriteria->getData('minPriceFields') !== null && $searchCriteria->getData('minPriceFields') !== '')) {
+                && ($searchCriteria->getData('minPriceFields') !== null && $searchCriteria->getData('minPriceFields') !== '')
+            ) {
                 $collection->addPriceDataFieldFilter('%s >= %s', ['final_price', $searchCriteria->getData('minPriceFields')])
-                           ->addFinalPrice();
+                    ->addFinalPrice();
             } elseif (($searchCriteria->getData('maxPriceFields') !== null && $searchCriteria->getData('maxPriceFields') !== '')
-                      && ($searchCriteria->getData('minPriceFields') !== null && $searchCriteria->getData('minPriceFields') !== '')) {
+                && ($searchCriteria->getData('minPriceFields') !== null && $searchCriteria->getData('minPriceFields') !== '')
+            ) {
                 $collection->addPriceDataFieldFilter('%s >= %s', ['final_price', $searchCriteria->getData('minPriceFields')])
-                           ->addPriceDataFieldFilter('%s <= %s', ['final_price', $searchCriteria->getData('maxPriceFields')])
-                           ->addFinalPrice();
+                    ->addPriceDataFieldFilter('%s <= %s', ['final_price', $searchCriteria->getData('maxPriceFields')])
+                    ->addFinalPrice();
             } else {
                 $collection->addFinalPrice();
             }
 
             if ($searchCriteria->getData('isViewDetail') && $searchCriteria->getData('isViewDetail') == true) {
             } else {
-                if ($this->productHelper->getPWAProductVisibility($searchCriteria->getData('storeId'))) {
+                if ($this->isVisibilitySearchable() && $this->productHelper->getPWAProductVisibility($searchCriteria->getData('storeId'))) {
                     $collection->addAttributeToFilter(
                         'visibility',
                         ['in' => $this->productHelper->getPWAProductVisibility($searchCriteria->getData('storeId'))]
@@ -899,11 +932,11 @@ class ProductManagement extends ServiceAbstract
         return $collection;
     }
 
-//
+    //
     public function searchProductPWACollection($searchCriteria, $collection)
     {
         if ($searchCriteria->getData('isViewDetail') && $searchCriteria->getData('isViewDetail') == true) {
-            $product      = $this->getProductModel()->load($searchCriteria->getData('searchValue'));
+            $product = $this->getProductModel()->load($searchCriteria->getData('searchValue'));
             $_configChild = [$product->getData('entity_id')];
             if ($product->getTypeId() != 'simple') {
                 $listChild = $product->getTypeInstance()->getChildrenIds($product->getId());
@@ -916,7 +949,7 @@ class ProductManagement extends ServiceAbstract
         } else {
             $searchValue = $searchCriteria->getData('searchValue');
             $searchValue = str_replace(',', ' ', $searchValue);
-//            $searchField = $this->productHelper->getSearchOnlineAttribute(explode(",", $searchCriteria->getData('searchFields')));
+            //            $searchField = $this->productHelper->getSearchOnlineAttribute(explode(",", $searchCriteria->getData('searchFields')));
             $searchField = explode(
                 ',',
                 $this->scopeConfig->getValue(
@@ -934,9 +967,9 @@ class ProductManagement extends ServiceAbstract
                 if (is_array($searchField) && $searchField[0] !== '') {
                     foreach ($searchField as $field) {
                         if ($field === 'id') {
-                            $_fieldFilters[] = ['attribute' => 'entity_id', 'like' => '%' . $value . '%'];
+                            $_fieldFilters[] = ['attribute' => 'entity_id', 'like' => '%'.$value.'%'];
                         } else {
-                            $_fieldFilters[] = ['attribute' => $field, 'like' => '%' . $value . '%'];
+                            $_fieldFilters[] = ['attribute' => $field, 'like' => '%'.$value.'%'];
                         }
                     }
                     $collection->addAttributeToFilter($_fieldFilters, null, 'left');
@@ -951,7 +984,7 @@ class ProductManagement extends ServiceAbstract
     {
         if ($searchCriteria->getData('isFindProduct') == 1) {
             if ($searchCriteria->getData('isViewDetail') && $searchCriteria->getData('isViewDetail') == true) {
-                $product      = $this->getProductModel()->load($searchCriteria->getData('searchValue'));
+                $product = $this->getProductModel()->load($searchCriteria->getData('searchValue'));
                 $_configChild = [$product->getData('entity_id')];
                 if ($product->getTypeId() != 'simple') {
                     $listChild = $product->getTypeInstance()->getChildrenIds($product->getId());
@@ -981,9 +1014,9 @@ class ProductManagement extends ServiceAbstract
                 $_fieldFilters = [];
                 foreach ($searchField as $field) {
                     if ($field === 'id') {
-                        $_fieldFilters[] = ['attribute' => 'entity_id', 'like' => '%' . $value . '%'];
+                        $_fieldFilters[] = ['attribute' => 'entity_id', 'like' => '%'.$value.'%'];
                     } else {
-                        $_fieldFilters[] = ['attribute' => $field, 'like' => '%' . $value . '%'];
+                        $_fieldFilters[] = ['attribute' => $field, 'like' => '%'.$value.'%'];
                     }
                 }
                 $collection->addAttributeToFilter($_fieldFilters, null, 'left');
@@ -1072,6 +1105,44 @@ class ProductManagement extends ServiceAbstract
     }
 
     /**
+     * @return bool|string|null
+     */
+    private function isStatusSearchable()
+    {
+        if (!is_null($this->isStatusSearchable)) {
+            return $this->isStatusSearchable;
+        }
+
+        try {
+            $statusAttribute = $this->attributeRepository->get('status');
+            $this->isStatusSearchable = $statusAttribute->getIsSearchable();
+        } catch (\Exception $e) {
+            $this->isStatusSearchable = true;
+        }
+
+        return $this->isStatusSearchable;
+    }
+
+    /**
+     * @return bool|string|null
+     */
+    private function isVisibilitySearchable()
+    {
+        if (!is_null($this->isVisibilitySearchable)) {
+            return $this->isVisibilitySearchable;
+        }
+
+        try {
+            $statusAttribute = $this->attributeRepository->get('visibility');
+            $this->isVisibilitySearchable = $statusAttribute->getIsSearchable();
+        } catch (\Exception $e) {
+            $this->isVisibilitySearchable = true;
+        }
+
+        return $this->isVisibilitySearchable;
+    }
+
+    /**
      * @param      $message
      * @param null $item
      *
@@ -1079,6 +1150,6 @@ class ProductManagement extends ServiceAbstract
      */
     private function addNotificationError($message, $item = null)
     {
-        return $this->notifierPool->addCritical('Error During Load Product ID ' . $item, $message);
+        return $this->notifierPool->addCritical('Error During Load Product ID '.$item, $message);
     }
 }
