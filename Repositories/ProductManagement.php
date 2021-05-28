@@ -311,9 +311,12 @@ class ProductManagement extends ServiceAbstract
         WarehouseIntegrateManagement::setWarehouseId(
             is_null($searchCriteria->getData('warehouse_id'))
                 ? $searchCriteria->getData('warehouseId')
-                : $searchCriteria->getData(
-                'warehouse_id'
-            )
+                : $searchCriteria->getData('warehouse_id')
+        );
+        WarehouseIntegrateManagement::setOutletId(
+            is_null($searchCriteria->getData('outlet_id'))
+                ? $searchCriteria->getData('outletId')
+                : $searchCriteria->getData('outlet_id')
         );
         $items = [];
         $storeId = $this->getStoreManager()->getStore()->getId();
@@ -419,6 +422,16 @@ class ProductManagement extends ServiceAbstract
         } else {
             WarehouseIntegrateManagement::setWarehouseId(
                 $searchCriteria->getData('warehouse_id')
+            );
+        }
+
+        if (is_null($searchCriteria->getData('outlet_id'))) {
+            WarehouseIntegrateManagement::setOutletId(
+                $searchCriteria->getData('outletId')
+            );
+        } else {
+            WarehouseIntegrateManagement::setOutletId(
+                $searchCriteria->getData('outlet_id')
             );
         }
 
