@@ -58,15 +58,6 @@ class Configurable extends \Magento\ConfigurableProduct\Block\Product\View\Type\
         $options = $this->helper->getOptions($currentProduct, $this->getAllowProducts());
         $attributesData = $this->configurableAttributeData->getAttributesData($currentProduct, $options);
 
-        foreach ($attributesData['attributes'] as $idx => &$attribute) {
-            foreach($attribute['options'] as $oid => $option) {
-                if (empty($option['products'])) {
-                    unset($attribute['options'][$oid]);
-                    continue;
-                }
-            }
-        }
-
         $config = [
             'attributes' => $attributesData['attributes'],
             'template' => str_replace('%s', '<%- data.price %>', $store->getCurrentCurrency()->getOutputFormat()),

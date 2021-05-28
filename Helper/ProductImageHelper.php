@@ -7,6 +7,8 @@
 
 namespace SM\Product\Helper;
 
+use Magento\Catalog\Api\Data\ProductAttributeMediaGalleryEntryInterface;
+use Magento\Catalog\Api\ProductAttributeMediaGalleryManagementInterface;
 use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\Product\Media\Config;
 use Magento\Framework\App\Filesystem\DirectoryList;
@@ -23,7 +25,7 @@ class ProductImageHelper extends AbstractHelper
     /**
      * Custom directory relative to the "media" folder
      */
-    const DIRECTORY         = 'retail/pos';
+    const DIRECTORY = 'retail/pos';
     const CATALOG_DIRECTORY = '/catalog/product';
 
     /**
@@ -53,11 +55,25 @@ class ProductImageHelper extends AbstractHelper
     private $mediaDirectoryRead;
 
     /**
-     * @param \Magento\Framework\App\Helper\Context       $context
-     * @param \Magento\Framework\Filesystem               $filesystem
-     * @param \Magento\Framework\Image\AdapterFactory     $imageFactory
-     * @param \Magento\Store\Model\StoreManagerInterface  $storeManager
-     * @param \Magento\Catalog\Model\Product\Media\Config $productMediaConfig
+     * @var ProductAttributeMediaGalleryManagementInterface
+     */
+    private $productAttributeMediaGallery;
+
+    /**
+     * Catalog Image Helper
+     *
+     * @var \Magento\Catalog\Helper\Image
+     */
+    protected $imageHelper;
+
+    /**
+     * @param \Magento\Framework\App\Helper\Context           $context
+     * @param \Magento\Framework\Filesystem                   $filesystem
+     * @param \Magento\Framework\Image\AdapterFactory         $imageFactory
+     * @param \Magento\Store\Model\StoreManagerInterface      $storeManager
+     * @param \Magento\Catalog\Model\Product\Media\Config     $productMediaConfig
+     * @param ProductAttributeMediaGalleryManagementInterface $productAttributeMediaGallery
+     * @param \Magento\Catalog\Helper\Image                   $imageHelper
      *
      * @throws \Magento\Framework\Exception\FileSystemException
      */
@@ -66,13 +82,17 @@ class ProductImageHelper extends AbstractHelper
         Filesystem $filesystem,
         AdapterFactory $imageFactory,
         StoreManagerInterface $storeManager,
-        Config $productMediaConfig
+        Config $productMediaConfig,
+        ProductAttributeMediaGalleryManagementInterface $productAttributeMediaGallery,
+        \Magento\Catalog\Helper\Image $imageHelper
     ) {
-        $this->mediaDirectory    = $filesystem->getDirectoryWrite(DirectoryList::MEDIA);
+        $this->mediaDirectory = $filesystem->getDirectoryWrite(DirectoryList::MEDIA);
         $this->mediaDirectoryRead = $filesystem->getDirectoryRead(DirectoryList::MEDIA);
-        $this->imageFactory      = $imageFactory;
-        $this->storeManager      = $storeManager;
+        $this->imageFactory = $imageFactory;
+        $this->storeManager = $storeManager;
         $this->productMediaConfig = $productMediaConfig;
+        $this->productAttributeMediaGallery = $productAttributeMediaGallery;
+        $this->imageHelper = $imageHelper;
         parent::__construct($context);
     }
 
@@ -106,19 +126,19 @@ class ProductImageHelper extends AbstractHelper
     {
         $mediaFolder = self::DIRECTORY;
 
-        $path = $mediaFolder . '/cache';
+        $path = $mediaFolder.'/cache';
         if ($width !== null) {
-            $path .= '/' . $width . 'x';
+            $path .= '/'.$width.'x';
             if ($height !== null) {
                 $path .= $height;
             }
         }
 
-        $absolutePath = $this->mediaDirectoryRead->getAbsolutePath(self::CATALOG_DIRECTORY . $image);
-        $imageResized = $this->mediaDirectory->getAbsolutePath($path) . $image;
+        $absolutePath = $this->mediaDirectoryRead->getAbsolutePath(self::CATALOG_DIRECTORY.$image);
+        $imageResized = $this->mediaDirectory->getAbsolutePath($path).$image;
 
-        if (!$this->fileExists($path . $image)) {
-            if ($this->fileExists(self::CATALOG_DIRECTORY . $image)) {
+        if (!$this->fileExists($path.$image)) {
+            if ($this->fileExists(self::CATALOG_DIRECTORY.$image)) {
                 $imageFactory = $this->imageFactory->create();
                 $imageFactory->open($absolutePath);
                 $imageFactory->constrainOnly(true);
@@ -132,7 +152,7 @@ class ProductImageHelper extends AbstractHelper
             }
         }
 
-        return $this->storeManager->getStore()->getBaseUrl(UrlInterface::URL_TYPE_MEDIA) . $path . $image;
+        return $this->storeManager->getStore()->getBaseUrl(UrlInterface::URL_TYPE_MEDIA).$path.$image;
     }
 
     /**
@@ -144,11 +164,13 @@ class ProductImageHelper extends AbstractHelper
     public function getImageUrl(Product $product)
     {
         if (is_null($product->getImage()) || $product->getImage() == 'no_selection' || !$product->getImage()) {
-            $mediaGalleryImages = $product->getMediaGalleryImages();
+            $mediaGalleryImages = $this->getMediaGallery($product->getSku());
 
-            if ($mediaGalleryImages && $mediaGalleryImages->getSize() > 0) {
-                $firstImage = $mediaGalleryImages->getFirstItem();
-                return $firstImage['url'];
+            if (count($mediaGalleryImages) > 0) {
+                $firstImage = $mediaGalleryImages[0];
+                return $this->imageHelper->init($product, 'product_page_image_small')
+                    ->setImageFile($firstImage->getFile())
+                    ->getUrl();
             }
 
             $imageUrl = null;
@@ -157,5 +179,20 @@ class ProductImageHelper extends AbstractHelper
         }
 
         return $imageUrl;
+    }
+
+    /**
+     * @param string $sku
+     * @return ProductAttributeMediaGalleryEntryInterface[]
+     */
+    public function getMediaGallery($sku)
+    {
+        $gallery = [];
+        try {
+            $gallery = $this->productAttributeMediaGallery->getList($sku);
+        } catch (\Exception $exception) {
+        }
+
+        return $gallery;
     }
 }
