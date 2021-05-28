@@ -40,6 +40,11 @@ class ProductStock
     private $storeRepository;
 
     /**
+     * @var \Magento\Framework\App\Config\ScopeConfigInterface
+     */
+    private $storeConfig;
+
+    /**
      * ProductStock constructor.
      *
      * @param \Magento\CatalogInventory\Api\StockItemCriteriaInterface   $stockItemCriteria
@@ -51,12 +56,14 @@ class ProductStock
         StockItemCriteriaInterface $stockItemCriteria,
         StockItemRepositoryInterface $stockItemRepository,
         \Magento\Catalog\Api\ProductRepositoryInterface $productRepository,
-        StoreRepository $storeRepository
+        StoreRepository $storeRepository,
+        \Magento\Framework\App\Config\ScopeConfigInterface $storeConfig
     ) {
         $this->stockItemCriteria   = $stockItemCriteria;
         $this->stockItemRepository = $stockItemRepository;
         $this->productRepository = $productRepository;
         $this->storeRepository = $storeRepository;
+        $this->storeConfig = $storeConfig;
     }
 
     public function getStock(Product $product, $scope)
@@ -80,7 +87,15 @@ class ProductStock
             }
             $listType = ['simple', 'virtual', 'giftcard', 'aw_giftcard', 'aw_giftcard2'];
             if (in_array($product->getType(), $listType)) {
-                if ($stock->getData('qty') > 0 && $stock->getData('is_in_stock') == 1) {
+                $minQty = $stock->getData('min_qty') ?? 0;
+                $manageStock = $stock->getData('manage_stock');
+
+                if (isset($defaultStock['use_config_manage_stock']) && $defaultStock['use_config_manage_stock'] != 0) {
+                    $manageStock = $this->storeConfig->getValue('cataloginventory/item_options/manage_stock');
+                    $stock->setData('manage_stock', intval($manageStock));
+                }
+
+                if (($stock->getData('qty') > $minQty) || ($stock->getData('backorders') > 0 && $stock->getData('is_in_stock') == 1) || $manageStock == 0) {
                     $stock->setData('is_in_stock', '1');
                 } else {
                     $stock->setData('is_in_stock', '0');
@@ -100,7 +115,12 @@ class ProductStock
             /** @var Product $p */
             $p = $this->productRepository->getById($child);
             $stock = $this->getStock($p, $scope);
-            if ($stock['is_in_stock'] == 1) {
+            $qty = $stock['qty'] ?? 0;
+            $minQty = $stock['min_qty'] ?? 0;
+            $backorders = $stock['backorders'] ?? 0;
+            $isInStock = $stock['is_in_stock'] ?? 0;
+            $manageStock = $stock['manage_stock'] ?? 1;
+            if (($qty > $minQty) || ($backorders > 0 && $isInStock == 1) || $manageStock == 0) {
                 return 1;
             }
         }

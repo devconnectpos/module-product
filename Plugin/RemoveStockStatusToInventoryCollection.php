@@ -3,7 +3,8 @@
 namespace SM\Product\Plugin;
 
 
-class RemoveStockStatusToInventoryCollection {
+class RemoveStockStatusToInventoryCollection
+{
 
     /**
      * @var \Magento\Framework\Registry
@@ -21,35 +22,29 @@ class RemoveStockStatusToInventoryCollection {
         $this->registry = $registry;
     }
 
-    //public function beforeAddIsInStockFilterToCollection($subject, $result) {
-    //    $isConnectPOs = $this->registry->registry('is_connectpos');
-    //    $stockFlag = 'has_stock_status_filter';
-    //    if ($isConnectPOs && !$result->hasFlag($stockFlag)) {
-    //        $result->setFlag($stockFlag, true);
-    //    }
-    //    //return $result;
-    //}
+    public function aroundAddInStockFilterToCollection($subject, $proceed, $result)
+    {
+        $isConnectPOS = $this->registry->registry('is_connectpos');
 
-    public function aroundAddInStockFilterToCollection($subject, $proceed, $result) {
-        $isConnectPOs = $this->registry->registry('is_connectpos');
-        if ($isConnectPOs) {
-            $this->registry->unregister('is_connectpos');
-            $this->registry->register('is_connectpos' , true);
-            return;
-        }else{
+        if (!$isConnectPOS) {
             $proceed($result);
+            return;
         }
+
+        $this->registry->unregister('is_connectpos');
+        $this->registry->register('is_connectpos', true);
     }
 
-    public function aroundAddIsInStockFilterToCollection($subject, $proceed, $result) {
-        $isConnectPOs = $this->registry->registry('is_connectpos');
-        if ($isConnectPOs) {
-            $this->registry->unregister('is_connectpos');
-            $this->registry->register('is_connectpos' , true);
+    public function aroundAddIsInStockFilterToCollection($subject, $proceed, $result)
+    {
+        $isConnectPOS = $this->registry->registry('is_connectpos');
+
+        if (!$isConnectPOS) {
+            $proceed($result);
             return;
         }
-        else {
-            $proceed($result);
-        }
+
+        $this->registry->unregister('is_connectpos');
+        $this->registry->register('is_connectpos', true);
     }
 }
