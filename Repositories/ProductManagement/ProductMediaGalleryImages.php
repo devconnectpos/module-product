@@ -4,7 +4,9 @@ namespace SM\Product\Repositories\ProductManagement;
 
 use Magento\Catalog\Api\Data\ProductAttributeMediaGalleryEntryInterface;
 use Magento\Catalog\Api\ProductAttributeMediaGalleryManagementInterface;
+use Magento\Catalog\Helper\Image;
 use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Gallery\ReadHandler;
 
 /**
  * Class ProductMediaGalleryImages
@@ -14,11 +16,7 @@ use Magento\Catalog\Model\Product;
 class ProductMediaGalleryImages
 {
     /**
-     * @var \SM\Product\Helper\ProductImageHelper
-     */
-    protected $productImageHelper;
-    /**
-     * @var Product\Gallery\ReadHandler
+     * @var ReadHandler
      */
     protected $galleryReadHandler;
 
@@ -35,17 +33,15 @@ class ProductMediaGalleryImages
     /**
      * Catalog Image Helper
      *
-     * @var \Magento\Catalog\Helper\Image
+     * @var Image
      */
     protected $imageHelper;
 
     public function __construct(
-        \SM\Product\Helper\ProductImageHelper $productImageHelper,
-        \Magento\Catalog\Model\Product\Gallery\ReadHandler $galleryReadHandler,
+        ReadHandler $galleryReadHandler,
         ProductAttributeMediaGalleryManagementInterface $productAttributeMediaGallery,
-        \Magento\Catalog\Helper\Image $imageHelper
+        Image $imageHelper
     ) {
-        $this->productImageHelper = $productImageHelper;
         $this->galleryReadHandler = $galleryReadHandler;
         $this->productAttributeMediaGallery = $productAttributeMediaGallery;
         $this->imageHelper = $imageHelper;
@@ -84,10 +80,6 @@ class ProductMediaGalleryImages
                         ->setImageFile($mediaGalleryImage->getFile())
                         ->getUrl();
                 }
-            }
-
-            if (empty($media)) {
-                $media[] = $this->productImageHelper->getImageUrl($product);
             }
 
             $this->cacheImage[$product->getId()] = $media;
