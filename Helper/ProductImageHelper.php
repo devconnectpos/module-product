@@ -18,6 +18,7 @@ use Magento\Framework\Filesystem;
 use Magento\Framework\Image\AdapterFactory;
 use Magento\Framework\UrlInterface;
 use Magento\Store\Model\StoreManagerInterface;
+use SM\Product\Repositories\ProductManagement\ProductMediaGalleryImages;
 
 class ProductImageHelper extends AbstractHelper
 {
@@ -44,20 +45,16 @@ class ProductImageHelper extends AbstractHelper
      * @var \Magento\Store\Model\StoreManagerInterface
      */
     protected $storeManager;
+
     /**
-     * @var \Magento\Catalog\Model\Product\Media\Config
+     * @var \SM\Product\Repositories\ProductManagement\ProductMediaGalleryImages
      */
-    private $productMediaConfig;
+    protected $productMediaGalleryImages;
 
     /**
      * @var \Magento\Framework\Filesystem\Directory\WriteInterface
      */
     private $mediaDirectoryRead;
-
-    /**
-     * @var ProductAttributeMediaGalleryManagementInterface
-     */
-    private $productAttributeMediaGallery;
 
     /**
      * Catalog Image Helper
@@ -67,13 +64,12 @@ class ProductImageHelper extends AbstractHelper
     protected $imageHelper;
 
     /**
-     * @param \Magento\Framework\App\Helper\Context           $context
-     * @param \Magento\Framework\Filesystem                   $filesystem
-     * @param \Magento\Framework\Image\AdapterFactory         $imageFactory
-     * @param \Magento\Store\Model\StoreManagerInterface      $storeManager
-     * @param \Magento\Catalog\Model\Product\Media\Config     $productMediaConfig
-     * @param ProductAttributeMediaGalleryManagementInterface $productAttributeMediaGallery
-     * @param \Magento\Catalog\Helper\Image                   $imageHelper
+     * @param \Magento\Framework\App\Helper\Context      $context
+     * @param \Magento\Framework\Filesystem              $filesystem
+     * @param \Magento\Framework\Image\AdapterFactory    $imageFactory
+     * @param \Magento\Store\Model\StoreManagerInterface $storeManager
+     * @param ProductMediaGalleryImages                  $productMediaGalleryImages
+     * @param \Magento\Catalog\Helper\Image              $imageHelper
      *
      * @throws \Magento\Framework\Exception\FileSystemException
      */
@@ -82,17 +78,15 @@ class ProductImageHelper extends AbstractHelper
         Filesystem $filesystem,
         AdapterFactory $imageFactory,
         StoreManagerInterface $storeManager,
-        Config $productMediaConfig,
-        ProductAttributeMediaGalleryManagementInterface $productAttributeMediaGallery,
+        ProductMediaGalleryImages $productMediaGalleryImages,
         \Magento\Catalog\Helper\Image $imageHelper
     ) {
         $this->mediaDirectory = $filesystem->getDirectoryWrite(DirectoryList::MEDIA);
         $this->mediaDirectoryRead = $filesystem->getDirectoryRead(DirectoryList::MEDIA);
         $this->imageFactory = $imageFactory;
         $this->storeManager = $storeManager;
-        $this->productMediaConfig = $productMediaConfig;
-        $this->productAttributeMediaGallery = $productAttributeMediaGallery;
         $this->imageHelper = $imageHelper;
+        $this->productMediaGalleryImages = $productMediaGalleryImages;
         parent::__construct($context);
     }
 
@@ -163,8 +157,8 @@ class ProductImageHelper extends AbstractHelper
      */
     public function getImageUrl(Product $product)
     {
-        if (is_null($product->getImage()) || $product->getImage() == 'no_selection' || !$product->getImage()) {
-            $mediaGalleryImages = $this->getMediaGallery($product->getSku());
+        if (is_null($product->getImage()) || $product->getImage() === 'no_selection' || !$product->getImage()) {
+            $mediaGalleryImages = $this->productMediaGalleryImages->getMediaGalleryImages($product);
 
             if (count($mediaGalleryImages) > 0) {
                 $firstImage = $mediaGalleryImages[0];
@@ -173,26 +167,10 @@ class ProductImageHelper extends AbstractHelper
                     ->getUrl();
             }
 
-            $imageUrl = null;
-        } else {
-            $imageUrl = $this->resize($product->getImage());
+            return null;
         }
 
-        return $imageUrl;
+        return $this->resize($product->getImage());
     }
 
-    /**
-     * @param string $sku
-     * @return ProductAttributeMediaGalleryEntryInterface[]
-     */
-    public function getMediaGallery($sku)
-    {
-        $gallery = [];
-        try {
-            $gallery = $this->productAttributeMediaGallery->getList($sku);
-        } catch (\Exception $exception) {
-        }
-
-        return $gallery;
-    }
 }

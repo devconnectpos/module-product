@@ -27,9 +27,14 @@ class Configurable extends \Magento\ConfigurableProduct\Block\Product\View\Type\
         \Magento\ConfigurableProduct\Model\ConfigurableAttributeData $configurableAttributeData,
         array $data = [],
         \Magento\Framework\Locale\Format $localeFormat = null,
-        \Magento\Customer\Model\Session $customerSession = null,
-        \Magento\ConfigurableProduct\Model\Product\Type\Configurable\Variations\Prices $variationPrices = null
+        \Magento\Customer\Model\Session $customerSession = null
     ) {
+        $variationPrices = null;
+
+        if (class_exists('Magento\ConfigurableProduct\Model\Product\Type\Configurable\Variations\Prices')) {
+            $variationPrices = ObjectManager::getInstance()->get('Magento\ConfigurableProduct\Model\Product\Type\Configurable\Variations\Prices');
+        }
+
         parent::__construct(
             $context,
             $arrayUtils,
@@ -45,9 +50,7 @@ class Configurable extends \Magento\ConfigurableProduct\Block\Product\View\Type\
             $variationPrices
         );
         $this->localeFormat = $localeFormat ?: ObjectManager::getInstance()->get(Format::class);
-        $this->variationPrices = $variationPrices ?: ObjectManager::getInstance()->get(
-            \Magento\ConfigurableProduct\Model\Product\Type\Configurable\Variations\Prices::class
-        );
+        $this->variationPrices = $variationPrices;
     }
 
     public function getConfigurableJsonConfig()
@@ -64,12 +67,29 @@ class Configurable extends \Magento\ConfigurableProduct\Block\Product\View\Type\
             'currencyFormat' => $store->getCurrentCurrency()->getOutputFormat(),
             'optionPrices' => $this->getOptionPrices(),
             'priceFormat' => $this->localeFormat->getPriceFormat(),
-            'prices' => $this->variationPrices->getFormattedPrices($this->getProduct()->getPriceInfo()),
             'productId' => $currentProduct->getId(),
             'chooseText' => __('Choose an Option...'),
             'images' => $this->getOptionImages(),
             'index' => isset($options['index']) ? $options['index'] : [],
         ];
+
+        if (!is_null($this->variationPrices)) {
+            $config['prices'] = $this->variationPrices->getFormattedPrices($this->getProduct()->getPriceInfo());
+        } else {
+            $regularPrice = $currentProduct->getPriceInfo()->getPrice('regular_price');
+            $finalPrice = $currentProduct->getPriceInfo()->getPrice('final_price');
+            $config['prices'] = [
+                'oldPrice' => [
+                    'amount' => $this->localeFormat->getNumber($regularPrice->getAmount()->getValue()),
+                ],
+                'basePrice' => [
+                    'amount' => $this->localeFormat->getNumber($finalPrice->getAmount()->getBaseAmount()),
+                ],
+                'finalPrice' => [
+                    'amount' => $this->localeFormat->getNumber($finalPrice->getAmount()->getValue()),
+                ],
+            ];
+        }
 
         if ($currentProduct->hasPreconfiguredValues() && !empty($attributesData['defaultValues'])) {
             $config['defaultValues'] = $attributesData['defaultValues'];

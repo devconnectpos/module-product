@@ -49,50 +49,62 @@ class ProductManagement extends ServiceAbstract
      * @var CollectionFactory
      */
     protected $collectionFactory;
+
     /**
-     * @var CustomSalesHelper
+     * @var \SM\CustomSale\Helper\Data
      */
     protected $customSalesHelper;
+
     /**
      * @var \SM\Product\Repositories\ProductManagement\ProductMediaGalleryImages
      */
     protected $productMediaGalleryImages;
+
     /**
      * @var \Magento\Catalog\Helper\Product
      */
     protected $catalogProduct;
+
     /**
      * @var \Magento\Config\Model\Config\Loader
      */
     protected $configLoader;
+
     /**
      * @var RetailHelper
      */
     protected $retailHelper;
+
     /**
      * @var CategoryCollectionFactory
      */
     protected $categoryCollectionFactory;
+
     /**
      * @var \SM\Product\Repositories\ProductManagement\ProductOptions
      */
     private $productOptions;
+
     /**
      * @var \Magento\Catalog\Model\Product\Media\Config
      */
     private $productMediaConfig;
+
     /**
      * @var \SM\Product\Repositories\ProductManagement\ProductAttribute
      */
     private $productAttribute;
+
     /**
      * @var \SM\Product\Repositories\ProductManagement\ProductStock
      */
     private $productStock;
+
     /**
      * @var \SM\Product\Repositories\ProductManagement\ProductPrice
      */
     private $productPrice;
+
     /**
      * @var \Magento\Framework\Cache\FrontendInterface
      */
@@ -357,13 +369,11 @@ class ProductManagement extends ServiceAbstract
         /** @var \SM\Core\Api\Data\XProduct $xProduct */
         $xProduct = $this->xProductFactory->create();
         $xProduct->addData($product->getData());
-
         $xProduct->setData('store_id', $storeId);
-
-        $xProduct->setData('origin_image', $this->productImageHelper->getImageUrl($product));
-
-        $xProduct->setData('media_gallery', $this->productMediaGalleryImages->getMediaGalleryImages($product));
-
+        $imageUrl = $this->productImageHelper->getImageUrl($product);
+        $gallery = $this->productMediaGalleryImages->getMediaGalleryImages($product);
+        $xProduct->setData('origin_image', (empty($imageUrl) && isset($gallery[0])) ? $gallery[0] : $imageUrl);
+        $xProduct->setData('media_gallery', $gallery);
         $xProduct->setData('stock_items', $this->getStockItem($product, $warehouseId, $storeId));
 
         return $xProduct;
@@ -662,9 +672,10 @@ class ProductManagement extends ServiceAbstract
 
         $xProduct->setData('attribute_set_name', $this->getAttributeSetName($product->getAttributeSetId()));
 
-        $xProduct->setData('origin_image', $this->productImageHelper->getImageUrl($product));
-
-        $xProduct->setData('media_gallery', $this->productMediaGalleryImages->getMediaGalleryImages($product));
+        $imageUrl = $this->productImageHelper->getImageUrl($product);
+        $gallery = $this->productMediaGalleryImages->getMediaGalleryImages($product);
+        $xProduct->setData('origin_image', (empty($imageUrl) && isset($gallery[0])) ? $gallery[0] : $imageUrl);
+        $xProduct->setData('media_gallery', $gallery);
 
         $xProduct->setData('custom_attributes', $this->getProductAttribute()->getCustomAttributes($product));
         $xProduct->setData(
