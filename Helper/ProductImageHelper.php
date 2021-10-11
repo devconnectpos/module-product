@@ -161,10 +161,13 @@ class ProductImageHelper extends AbstractHelper
             $mediaGalleryImages = $this->productMediaGalleryImages->getMediaGalleryImages($product);
 
             if (count($mediaGalleryImages) > 0) {
-                $firstImage = $mediaGalleryImages[0];
-                return $this->imageHelper->init($product, 'product_page_image_small')
-                    ->setImageFile($firstImage->getFile())
-                    ->getUrl();
+                $firstImage = $mediaGalleryImages[0] ?? null;
+                if (is_object($firstImage)) {
+                    return $this->imageHelper->init($product, 'product_page_image_small')
+                        ->setImageFile($firstImage->getFile())
+                        ->getUrl();
+                }
+                return $firstImage;
             }
 
             return null;
