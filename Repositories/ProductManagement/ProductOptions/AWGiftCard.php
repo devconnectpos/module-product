@@ -38,6 +38,10 @@ class AWGiftCard extends ProductOptions
      */
     public function getGiftCardOption(Product $product)
     {
+        if (!$product->getData('aw_gc_email_templates')) {
+            $product->setData('aw_gc_email_templates', []);
+        }
+
         $this->resetProductInBlock($product);
         $isPhysicalValue = false;
         if ($product->getData('aw_gc_type') == GiftcardType::VALUE_PHYSICAL) {
