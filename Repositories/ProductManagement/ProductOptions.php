@@ -88,13 +88,13 @@ class ProductOptions
         ProductCustomOptionRepositoryInterface $customOptionRepository
     ) {
         $this->productFactory = $productFactory;
-        $this->objectManager  = $objectManager;
+        $this->objectManager = $objectManager;
         $this->catalogProduct = $catalogProduct;
-        $this->registry       = $registry;
-        $this->productPrice   = $productPrice;
-        $this->integrateData  = $integrateData;
-        $this->imageHelper    = $imageHelper;
-        $this->productHelper  = $productHelper;
+        $this->registry = $registry;
+        $this->productPrice = $productPrice;
+        $this->integrateData = $integrateData;
+        $this->imageHelper = $imageHelper;
+        $this->productHelper = $productHelper;
         $this->customOptionRepository = $customOptionRepository;
     }
 
@@ -119,14 +119,21 @@ class ProductOptions
                 break;
             case 'aw_giftcard':
                 /** @var \SM\Product\Repositories\ProductManagement\ProductOptions\AWGiftCard $awGC */
-                $awGC                  = $this->objectManager->create(
+                $awGC = $this->objectManager->create(
                     'SM\Product\Repositories\ProductManagement\ProductOptions\AWGiftCard'
                 );
                 $xOptions['gift_card'] = $awGC->getGiftCardOption($product);
                 break;
+            case 'amgiftcard':
+                /** @var \SM\Product\Repositories\ProductManagement\ProductOptions\AmastyGiftCard $amGC */
+                $amGC = $this->objectManager->create(
+                    'SM\Product\Repositories\ProductManagement\ProductOptions\AmastyGiftCard'
+                );
+                $xOptions['gift_card'] = $amGC->getGiftCardOption($product);
+                break;
             case 'giftcard':
                 /** @var \SM\Product\Repositories\ProductManagement\ProductOptions\AWGiftCard $awGC */
-                $m2eeGC                = $this->objectManager->create(
+                $m2eeGC = $this->objectManager->create(
                     'SM\Product\Repositories\ProductManagement\ProductOptions\M2EEGiftCard'
                 );
                 $xOptions['gift_card'] = $m2eeGC->getGiftCardOption($product);
@@ -208,23 +215,23 @@ class ProductOptions
         $this->resetProductInBlock($product);
         $this->catalogProduct->setSkipSaleableCheck(true);
         $outputOptions = [];
-        $options       = $this->getBundleBlock()->getOptions();
-        $obValues      = [];
+        $options = $this->getBundleBlock()->getOptions();
+        $obValues = [];
         if ($this->integrateData->isExistPektsekyeOptionBundle()) {
             $this->obBvalue = $this->objectManager->get('Pektsekye\OptionBundle\Model\ResourceModel\Bvalue');
-            $obValues       = $this->obBvalue->getValues($product->getId(), (int)$product->getStoreId());
+            $obValues = $this->obBvalue->getValues($product->getId(), (int)$product->getStoreId());
         }
         foreach ($options as $option) {
             $selections = [];
             if (is_array($option->getSelections())) {
                 foreach ($option->getSelections() as $selection) {
-                    $selectionData       = $selection->getData();
+                    $selectionData = $selection->getData();
                     $selectionData['id'] = $selectionData['entity_id'];
                     if (!empty($selectionData['tier_price'])) {
                         $selectionData['tier_prices'] = $selectionData['tier_price'];
                     } else {
                         $selectionData['tier_prices'] = $this->getProductPrice()
-                                                             ->getExistingPrices($selection, 'tier_price', true);
+                            ->getExistingPrices($selection, 'tier_price', true);
                     }
                     $image = isset($selectionData['image']) ? $selectionData['image'] : '';
 
@@ -234,27 +241,27 @@ class ProductOptions
                     $imageUrl = '';
                     if (!empty($image)) {
                         $imageUrl = $this->imageHelper->init($product, 'product_page_image_small', ['type' => 'thumbnail'])
-                                                      ->resize(200)
-                                                      ->setImageFile($image)
-                                                      ->getUrl();
+                            ->resize(200)
+                            ->setImageFile($image)
+                            ->getUrl();
                     }
-                    $selectionData['image']       = $imageUrl;
+                    $selectionData['image'] = $imageUrl;
                     $selectionData['small_image'] = $imageUrl;
-                    $selectionData['thumbnail']   = $imageUrl;
+                    $selectionData['thumbnail'] = $imageUrl;
                     if (isset($selectionData['product_id'])) {
                         $selectionData['additional_data'] = $this->productHelper->getProductAdditionalData($selectionData['product_id']);
                     }
                     $selections[] = $selectionData;
                 }
             }
-            $optionData               = $option->getData();
+            $optionData = $option->getData();
             $optionData['selections'] = $selections;
-            $outputOptions[]          = $optionData;
+            $outputOptions[] = $optionData;
         }
 
         return [
             'options'    => $outputOptions,
-            'type_price' => $product->getPriceType()
+            'type_price' => $product->getPriceType(),
         ];
     }
 
@@ -291,7 +298,7 @@ class ProductOptions
         $this->resetProductInBlock($product);
         $this->catalogProduct->setSkipSaleableCheck(true);
         //$this->getGroupedBlock()->setPreconfiguredValue();
-        $_associatedProducts    = $this->getGroupedBlock()->getAssociatedProducts();
+        $_associatedProducts = $this->getGroupedBlock()->getAssociatedProducts();
         $_hasAssociatedProducts = count($_associatedProducts) > 0;
         if ($_hasAssociatedProducts) {
             foreach ($_associatedProducts as $_item) {
@@ -300,7 +307,7 @@ class ProductOptions
                     $_itemData['tier_prices'] = $_itemData['tier_price'];
                 } else {
                     $_itemData['tier_prices'] = $this->getProductPrice()
-                                                     ->getExistingPrices($_item, 'tier_price', true);
+                        ->getExistingPrices($_item, 'tier_price', true);
                 }
                 $outputOptions[] = $_itemData;
             }
