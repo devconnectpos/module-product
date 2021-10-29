@@ -2,8 +2,6 @@
 
 namespace SM\Product\Repositories\ProductManagement\ProductOptions;
 
-use Amasty\GiftCard\Model\Config\Source\GiftCardType;
-use Amasty\GiftCard\Utils\FileUpload;
 use Magento\Catalog\Api\ProductCustomOptionRepositoryInterface;
 use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\ProductFactory;
@@ -11,7 +9,6 @@ use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Registry;
 use Magento\Framework\Serialize\Serializer\Json;
-use Magento\GiftCard\Model\Giftcard;
 use Magento\Store\Model\StoreManagerInterface;
 use SM\Product\Helper\ProductHelper;
 use SM\Product\Repositories\ProductManagement\ProductOptions;
@@ -21,6 +18,9 @@ class AmastyGiftCard extends ProductOptions
 {
     const PRICE_TYPE_PERCENT = 1;
     const PRICE_TYPE_FIXED = 2;
+    const TYPE_VIRTUAL = 1;
+    const TYPE_PRINTED = 2;
+    const TYPE_COMBINED = 3;
 
     /**
      * @var \Magento\Store\Model\Store
@@ -37,11 +37,6 @@ class AmastyGiftCard extends ProductOptions
      */
     protected $jsonSerializer;
 
-    /**
-     * @var FileUpload
-     */
-    protected $fileUpload;
-
     public function __construct(
         ObjectManagerInterface $objectManager,
         \Magento\Catalog\Helper\Product $catalogProduct,
@@ -52,10 +47,8 @@ class AmastyGiftCard extends ProductOptions
         ProductHelper $productHelper,
         ProductCustomOptionRepositoryInterface $customOptionRepository,
         StoreManagerInterface $storeManager,
-        FileUpload $fileUpload,
         Json $jsonSerializer
     ) {
-        $this->fileUpload = $fileUpload;
         $this->storeManager = $storeManager;
         $this->jsonSerializer = $jsonSerializer;
         parent::__construct($objectManager, $catalogProduct, $registry, $productFactory, $productPrice, $integrateData, $imageHelper, $productHelper, $customOptionRepository);
@@ -119,9 +112,9 @@ class AmastyGiftCard extends ProductOptions
             'isAllowDeliveryDate'  => false,
             'isAllowOpenAmount'    => (bool)$product->getData('am_allow_open_amount'),
             'isFixedAmount'        => !((bool)$product->getData('am_allow_open_amount')),
-            'isPhysicalValue'      => $product->getData('am_giftcard_type') == GiftCardType::TYPE_PRINTED,
-            'isCombinedValue'      => $product->getData('am_giftcard_type') == GiftCardType::TYPE_COMBINED,
-            'isVirtualValue'       => $product->getData('am_giftcard_type') == GiftCardType::TYPE_VIRTUAL,
+            'isPhysicalValue'      => $product->getData('am_giftcard_type') == self::TYPE_PRINTED,
+            'isCombinedValue'      => $product->getData('am_giftcard_type') == self::TYPE_COMBINED,
+            'isVirtualValue'       => $product->getData('am_giftcard_type') == self::TYPE_VIRTUAL,
             'isAllowGiftWrapping'  => false,
             'giftWrappingPrice'    => false,
             'getAmountOptions'     => $amounts,
@@ -141,15 +134,15 @@ class AmastyGiftCard extends ProductOptions
             'giftCardTypeOptions'  => [
                 [
                     'label' => 'e-Gift Card',
-                    'value' => GiftCardType::TYPE_VIRTUAL,
+                    'value' => self::TYPE_VIRTUAL,
                 ],
                 [
                     'label' => 'Physical Gift Card',
-                    'value' => GiftCardType::TYPE_PRINTED,
+                    'value' => self::TYPE_PRINTED,
                 ],
                 [
                     'label' => 'Combined Gift Card',
-                    'value' => GiftCardType::TYPE_COMBINED,
+                    'value' => self::TYPE_COMBINED,
                 ],
             ],
         ];
@@ -221,6 +214,10 @@ class AmastyGiftCard extends ProductOptions
     {
         $images = [];
 
+        if (!$this->getFileUpload()) {
+            return $images;
+        }
+
         if ($productImagesId = $product->getAmGiftcardCodeImage()) {
             $productImagesId = explode(',', $productImagesId);
             $collection = $this->getGiftCardImageCollection()
@@ -231,7 +228,7 @@ class AmastyGiftCard extends ProductOptions
                     $images[] = [
                         'name'     => $image->getTitle(),
                         'value'    => $image->getImageId(),
-                        'imageUrl' => $this->fileUpload->getImageUrl(
+                        'imageUrl' => $this->getFileUpload()->getImageUrl(
                             $image->getImagePath()
                         ),
                     ];
@@ -242,5 +239,13 @@ class AmastyGiftCard extends ProductOptions
         }
 
         return $images;
+    }
+
+    /**
+     * @return \Amasty\GiftCard\Utils\FileUpload|mixed
+     */
+    protected function getFileUpload()
+    {
+        return $this->getObjectManager()->get('Amasty\GiftCard\Utils\FileUpload');
     }
 }
