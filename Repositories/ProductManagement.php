@@ -379,6 +379,13 @@ class ProductManagement extends ServiceAbstract
         return $xProduct;
     }
 
+    /**
+     * @param $product
+     * @param $warehouseId
+     * @param $storeId
+     *
+     * @return array|mixed
+     */
     protected function getStockItem($product, $warehouseId, $storeId)
     {
         // get stock_items
@@ -401,7 +408,7 @@ class ProductManagement extends ServiceAbstract
      */
     public function loadXProducts($searchCriteria = null)
     {
-        if (is_null($searchCriteria) || !$searchCriteria) {
+        if (empty($searchCriteria)) {
             $searchCriteria = $this->getSearchCriteria();
         }
 
@@ -606,6 +613,11 @@ class ProductManagement extends ServiceAbstract
             ->setLastPageNumber($collection->getLastPageNumber());
     }
 
+    /**
+     * @param $product
+     *
+     * @return bool
+     */
     public function checkRelatedProduct($product)
     {
         $relatedProducts = $product->getRelatedProducts();
@@ -616,6 +628,12 @@ class ProductManagement extends ServiceAbstract
         }
     }
 
+    /**
+     * @param $product
+     * @param $storeId
+     *
+     * @return array
+     */
     public function getRelatedProductForPWA($product, $storeId)
     {
         $relatedProductCollection = $product->getRelatedProductCollection()->addStoreFilter($storeId)->getItems();
@@ -735,6 +753,12 @@ class ProductManagement extends ServiceAbstract
         return $categories;
     }
 
+    /**
+     * @param \Magento\Catalog\Model\Product $product
+     *
+     * @return null
+     * @throws \Magento\Framework\Exception\LocalizedException
+     */
     protected function getTopCategory(\Magento\Catalog\Model\Product $product)
     {
         $categoryIds = $product->getCategoryIds();
@@ -744,9 +768,11 @@ class ProductManagement extends ServiceAbstract
         $collection->addAttributeToSelect('name');
         $collection->addOrder('level', 'ASC');
 
-        if ($collection->getSize() == 1) {
+        if ($collection->getSize() === 1) {
             return $collection->getFirstItem()->getName();
-        } elseif ($collection->getSize() > 1) {
+        }
+
+        if ($collection->getSize() > 1) {
             foreach ($collection as $category) {
                 if ($category->getData('level') == 1) {
                     continue;
@@ -773,11 +799,21 @@ class ProductManagement extends ServiceAbstract
         return $this->processXProduct($product, $storeId, $warehouseId);
     }
 
+    /**
+     * @param $storeId
+     *
+     * @return int
+     * @throws \Magento\Framework\Exception\NoSuchEntityException
+     */
     public function getWebsiteId($storeId)
     {
         return $this->getStoreManager()->getStore($storeId)->getWebsiteId();
     }
 
+    /**
+     * @param $collection
+     * @param $websiteId
+     */
     public function filterStockItem($collection, $websiteId)
     {
         $collection->getSelect()->join(
@@ -828,8 +864,6 @@ class ProductManagement extends ServiceAbstract
         $collection->setPageSize($searchCriteria->getData('pageSize'));
 
         if (!!$searchCriteria->getData('categoryId') && $searchCriteria->getData('categoryId') !== 'null') {
-            //$category = $this->_categoryFactory->create()->load($searchCriteria->getData('categoryId'));
-            //$collection->addCategoryFilter($category);
             $collection->getSelect()->join(
                 ['category_product' => $collection->getTable('catalog_category_product')],
                 'category_product.product_id = e.entity_id',
@@ -897,12 +931,11 @@ class ProductManagement extends ServiceAbstract
             if ($this->isStatusSearchable() && $this->productHelper->getPWAProductAttributeStatus($searchCriteria->getData('storeId')) === 'no') {
                 $collection->addAttributeToFilter('status', 1);
             }
-            if (!!$searchCriteria->getData('categoryId') && $searchCriteria->getData('categoryId') != 'null') {
+            if (!!$searchCriteria->getData('categoryId') && $searchCriteria->getData('categoryId') !== 'null') {
                 $collection->addCategoriesFilter(['in' => [$searchCriteria->getData('categoryId')]]);
             }
 
             // filter online
-
             if (($searchCriteria->getData('minPriceFields') == null || $searchCriteria->getData('minPriceFields') == '')
                 && ($searchCriteria->getData('maxPriceFields') !== null && $searchCriteria->getData('maxPriceFields') !== '')
             ) {
@@ -923,14 +956,11 @@ class ProductManagement extends ServiceAbstract
                 $collection->addFinalPrice();
             }
 
-            if ($searchCriteria->getData('isViewDetail') && $searchCriteria->getData('isViewDetail') == true) {
-            } else {
-                if ($this->isVisibilitySearchable() && $this->productHelper->getPWAProductVisibility($searchCriteria->getData('storeId'))) {
-                    $collection->addAttributeToFilter(
-                        'visibility',
-                        ['in' => $this->productHelper->getPWAProductVisibility($searchCriteria->getData('storeId'))]
-                    );
-                }
+            if (!$searchCriteria->getData('isViewDetail') && $this->isVisibilitySearchable() && $this->productHelper->getPWAProductVisibility($searchCriteria->getData('storeId'))) {
+                $collection->addAttributeToFilter(
+                    'visibility',
+                    ['in' => $this->productHelper->getPWAProductVisibility($searchCriteria->getData('storeId'))]
+                );
             }
 
             if ($this->productHelper->getPWAOutOfStockStatus($searchCriteria->getData('storeId')) === 'no') {
@@ -939,7 +969,9 @@ class ProductManagement extends ServiceAbstract
                 $this->registry->unregister('is_connectpos');
                 $this->registry->register('is_connectpos', true);
             }
-            if (!!$searchCriteria->getData('filterField')) {
+
+            $filterField = $searchCriteria->getData('filterField');
+            if (!empty($filterField)) {
                 if ($searchCriteria->getData('filterField') === 'high_price') {
                     $collection->getSelect()->order('final_price desc');
                 } elseif ($searchCriteria->getData('filterField') === 'low_price') {
@@ -951,22 +983,28 @@ class ProductManagement extends ServiceAbstract
                 $collection->setOrder('entity_id', 'desc');
             }
         }
+
         $this->registry->unregister('disableFlatProduct');
 
         return $collection;
     }
 
-    //
+    /**
+     * @param $searchCriteria
+     * @param $collection
+     *
+     * @return mixed
+     */
     public function searchProductPWACollection($searchCriteria, $collection)
     {
         if ($searchCriteria->getData('isViewDetail') && $searchCriteria->getData('isViewDetail') == true) {
             $product = $this->getProductModel()->load($searchCriteria->getData('searchValue'));
             $_configChild = [$product->getData('entity_id')];
-            if ($product->getTypeId() != 'simple') {
+            if ($product->getTypeId() !== 'simple') {
                 $listChild = $product->getTypeInstance()->getChildrenIds($product->getId());
 
                 foreach ($listChild as $child) {
-                    $_configChild = array_merge($_configChild, $child);
+                    $_configChild += $child;
                 }
             }
             $collection->addFieldToFilter('entity_id', ['in' => $_configChild]);
@@ -982,7 +1020,7 @@ class ProductManagement extends ServiceAbstract
                     $searchCriteria->getData('storeId')
                 )
             );
-            if ($searchValue == 'null' || $searchValue == ' ' || $searchValue == '' || (is_array($searchField) && $searchField[0] === '')) {
+            if ($searchValue === 'null' || $searchValue === ' ' || $searchValue === '' || (is_array($searchField) && $searchField[0] === '')) {
                 $collection->addFieldToFilter('entity_id', null);
             }
 
@@ -1004,17 +1042,23 @@ class ProductManagement extends ServiceAbstract
         return $collection;
     }
 
+    /**
+     * @param $searchCriteria
+     * @param $collection
+     *
+     * @return mixed
+     */
     public function searchProductOnlineCollection($searchCriteria, $collection)
     {
         if ($searchCriteria->getData('isFindProduct') == 1) {
             if ($searchCriteria->getData('isViewDetail') && $searchCriteria->getData('isViewDetail') == true) {
                 $product = $this->getProductModel()->load($searchCriteria->getData('searchValue'));
                 $_configChild = [$product->getData('entity_id')];
-                if ($product->getTypeId() != 'simple') {
+                if ($product->getTypeId() !== 'simple') {
                     $listChild = $product->getTypeInstance()->getChildrenIds($product->getId());
 
                     foreach ($listChild as $child) {
-                        $_configChild = array_merge($_configChild, $child);
+                        $_configChild += $child;
                     }
                 }
                 $collection->addFieldToFilter('entity_id', ['in' => $_configChild]);
@@ -1027,11 +1071,10 @@ class ProductManagement extends ServiceAbstract
             }
             $searchValue = $searchCriteria->getData('searchValue');
             $searchValue = str_replace(',', ' ', $searchValue);
-            //$searchField = $searchCriteria->getData('searchFields');
             $searchField = $this->productHelper->getSearchOnlineAttribute(
                 explode(",", $searchCriteria->getData('searchFields'))
             );
-            if ($searchValue == 'null' || $searchValue == ' ' || $searchValue == '') {
+            if ($searchValue === 'null' || $searchValue === ' ' || $searchValue === '') {
                 $collection->addFieldToFilter('entity_id', null);
             }
             foreach (explode(" ", $searchValue) as $value) {

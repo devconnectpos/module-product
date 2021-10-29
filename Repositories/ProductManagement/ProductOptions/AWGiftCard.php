@@ -13,7 +13,6 @@ use SM\Product\Repositories\ProductManagement\ProductOptions;
 
 class AWGiftCard extends ProductOptions
 {
-
     /**
      * @var \Aheadworks\Giftcard\Block\Product\View
      */
@@ -48,6 +47,7 @@ class AWGiftCard extends ProductOptions
             $isPhysicalValue = true;
         }
         $giftCardType = $this->getGiftCardType($product);
+
         return [
             'isAllowPreview'      => $this->getGiftCardViewBlock()->isAllowPreview(),
             'isAllowDesignSelect' => $this->getGiftCardViewBlock()->isAllowDesignSelect(),
@@ -61,34 +61,34 @@ class AWGiftCard extends ProductOptions
             'giftCardType'        => $giftCardType,
 
             'getAmountOptions'     => $this->getGiftCardViewBlock()->getAmountOptions(),
-            'getAmountOptionValue' => $this->getGiftCardViewBlock()->getAmountOptionValue(),
+            'getAmountOptionValue' => $this->getGiftCardViewBlocam_email_templatek()->getAmountOptionValue(),
             'getMinCustomAmount'   => $this->getGiftCardViewBlock()->getMinCustomAmount(),
             'getMaxCustomAmount'   => $this->getGiftCardViewBlock()->getMaxCustomAmount(),
             'getFixedAmount'       => $this->getGiftCardViewBlock()->getFixedAmount(),
             'getTimezones'         => $this->getGiftCardViewBlock()->getTimezones(),
             'getGiftcardTemplates' => $this->getGiftCardViewBlock()->getGiftcardTemplates(),
 
-            'codePool' => $product->getData('aw_gc_pool') ? $product->getData('aw_gc_pool') : false
+            'codePool' => $product->getData('aw_gc_pool') ? $product->getData('aw_gc_pool') : false,
         ];
     }
 
     /**
      * @param Product $product
+     *
      * @return string
      */
     protected function getGiftCardType(Product $product)
     {
         $giftCardType = $product->getData('aw_gc_type');
         switch ($giftCardType) {
-            case \Aheadworks\Giftcard\Model\Source\Entity\Attribute\GiftcardType::VALUE_VIRTUAL:
+            case GiftcardType::VALUE_VIRTUAL:
                 return 'virtual';
 
-            case \Aheadworks\Giftcard\Model\Source\Entity\Attribute\GiftcardType::VALUE_PHYSICAL:
+            case GiftcardType::VALUE_PHYSICAL:
                 return 'physical';
 
-            case \Aheadworks\Giftcard\Model\Source\Entity\Attribute\GiftcardType::VALUE_COMBINED:
+            case GiftcardType::VALUE_COMBINED:
                 return 'combined';
-
             default:
                 return '';
         }
