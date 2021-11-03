@@ -184,13 +184,13 @@ class AmastyGiftCard extends ProductOptions
         $giftCardType = $product->getData('am_giftcard_type');
 
         switch ($giftCardType) {
-            case GiftCardType::TYPE_VIRTUAL:
+            case self::TYPE_VIRTUAL:
                 return 'virtual';
 
-            case GiftCardType::TYPE_PRINTED:
+            case self::TYPE_PRINTED:
                 return 'physical';
 
-            case GiftCardType::TYPE_COMBINED:
+            case self::TYPE_COMBINED:
                 return 'combined';
         }
 
@@ -202,7 +202,7 @@ class AmastyGiftCard extends ProductOptions
      */
     protected function getGiftCardImageCollection()
     {
-        return $this->getObjectManager()->get('Amasty\GiftCard\Model\Image\ResourceModel\Collection');
+        return $this->getObjectManager()->create('Amasty\GiftCard\Model\Image\ResourceModel\Collection');
     }
 
     /**
@@ -218,7 +218,14 @@ class AmastyGiftCard extends ProductOptions
             return $images;
         }
 
-        if ($productImagesId = $product->getAmGiftcardCodeImage()) {
+        $productImagesId = $product->getAmGiftcardCodeImage();
+        $codeImageAttr = $product->getCustomAttribute('am_giftcard_code_image');
+
+        if ($codeImageAttr) {
+            $productImagesId = $codeImageAttr->getValue();
+        }
+
+        if ($productImagesId) {
             $productImagesId = explode(',', $productImagesId);
             $collection = $this->getGiftCardImageCollection()
                 ->addFieldToFilter('image_id', ['in' => $productImagesId]);
@@ -233,7 +240,6 @@ class AmastyGiftCard extends ProductOptions
                         ),
                     ];
                 } catch (LocalizedException $e) {
-                    return $images;
                 }
             }
         }
