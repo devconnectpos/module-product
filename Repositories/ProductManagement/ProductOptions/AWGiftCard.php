@@ -61,7 +61,7 @@ class AWGiftCard extends ProductOptions
             'giftCardType'        => $giftCardType,
 
             'getAmountOptions'     => $this->getGiftCardViewBlock()->getAmountOptions(),
-            'getAmountOptionValue' => $this->getGiftCardViewBlocam_email_templatek()->getAmountOptionValue(),
+            'getAmountOptionValue' => $this->getGiftCardViewBlock()->getAmountOptionValue(),
             'getMinCustomAmount'   => $this->getGiftCardViewBlock()->getMinCustomAmount(),
             'getMaxCustomAmount'   => $this->getGiftCardViewBlock()->getMaxCustomAmount(),
             'getFixedAmount'       => $this->getGiftCardViewBlock()->getFixedAmount(),
