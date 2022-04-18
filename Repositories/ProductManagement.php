@@ -10,6 +10,7 @@ use Magento\Catalog\Model\Product\Media\Config;
 use Magento\Catalog\Model\ProductFactory;
 use Magento\Catalog\Model\ResourceModel\Category\CollectionFactory as CategoryCollectionFactory;
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
+use Magento\Config\Model\Config\Loader;
 use Magento\Eav\Api\AttributeSetRepositoryInterface;
 use Magento\Eav\Model\ResourceModel\Entity\Attribute;
 use Magento\Framework\App\Config\ScopeConfigInterface;
@@ -248,7 +249,8 @@ class ProductManagement extends ServiceAbstract
         XProductFactory $xProductFactory,
         RetailHelper $retailHelper,
         CategoryCollectionFactory $categoryCollectionFactory,
-        Repository $attributeRepository
+        Repository $attributeRepository,
+        Loader $loader
     ) {
         $this->cache = $cache;
         $this->catalogProduct = $catalogProduct;
@@ -277,6 +279,7 @@ class ProductManagement extends ServiceAbstract
         $this->retailHelper = $retailHelper;
         $this->categoryCollectionFactory = $categoryCollectionFactory;
         $this->attributeRepository = $attributeRepository;
+        $this->configLoader = $loader;
 
         parent::__construct($requestInterface, $dataConfig, $storeManager);
     }
@@ -466,9 +469,13 @@ class ProductManagement extends ServiceAbstract
             ['loading_data' => $loadingData]
         );
 
+        $config = $this->configLoader->getConfigByPath('xpos/advance', 'default', 0);
+        $realtimeConfig = isset($config['xpos/advance/sync_realtime']) ? $config['xpos/advance/sync_realtime']['value'] : '';
+
         if ($loadingData->getData(CacheKeeper::$IS_PULL_FROM_CACHE) === true
             && $searchCriteria->getData('searchOnline') != 1
             && $searchCriteria->getData('realTime') != 1
+            && $realtimeConfig !== 'no_product_cache'
         ) {
             $items = $loadingData->getData('items');
             $this->getSearchResult()->setCacheTime($loadingData->getData('cache_time'));
