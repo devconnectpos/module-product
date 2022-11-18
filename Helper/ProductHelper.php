@@ -46,7 +46,7 @@ class ProductHelper
 	 * @var \Magento\Catalog\Api\ProductRepositoryInterface
 	 */
 	private $productRepository;
-	
+
 	public function __construct(
         Loader $loader,
         Type $entityType,
@@ -73,8 +73,8 @@ class ProductHelper
                 ARRAY_FILTER_USE_KEY
             );
 
-            if (is_array($productAttribute) && count($productAttribute) > 0 && is_array(json_decode(current($productAttribute)['value'], true))) {
-                $this->productAdditionAttribute = json_decode(current($productAttribute)['value'], true);
+            if (is_array($productAttribute) && count($productAttribute) > 0 && is_array(json_decode((string)current($productAttribute)['value'], true))) {
+                $this->productAdditionAttribute = json_decode((string)current($productAttribute)['value'], true);
             } else {
                 $this->productAdditionAttribute = [];
             }
@@ -118,8 +118,8 @@ class ProductHelper
                 ARRAY_FILTER_USE_KEY
             );
 
-            if (count($productAttribute) > 0 && is_array(json_decode(current($productAttribute)['value'], true))) {
-                $this->productSearchAttribute = json_decode(current($productAttribute)['value'], true);
+            if (count($productAttribute) > 0 && is_array(json_decode((string)current($productAttribute)['value'], true))) {
+                $this->productSearchAttribute = json_decode((string)current($productAttribute)['value'], true);
             } else {
                 $this->productSearchAttribute = [];
             }
@@ -161,7 +161,7 @@ class ProductHelper
 
         return $attributeArray;
     }
-	
+
 	/**
 	 * @param \Magento\Catalog\Model\Product | string $product
 	 *
