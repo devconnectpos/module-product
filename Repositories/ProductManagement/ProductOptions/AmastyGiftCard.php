@@ -226,7 +226,7 @@ class AmastyGiftCard extends ProductOptions
         }
 
         if ($productImagesId) {
-            $productImagesId = explode(',', $productImagesId);
+            $productImagesId = explode(',', (string)$productImagesId);
             $collection = $this->getGiftCardImageCollection()
                 ->addFieldToFilter('image_id', ['in' => $productImagesId]);
 

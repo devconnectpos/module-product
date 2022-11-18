@@ -415,12 +415,12 @@ class ProductManagement extends ServiceAbstract
             $searchCriteria = $this->getSearchCriteria();
         }
 
-        if (is_nan($searchCriteria->getData('currentPage'))) {
+        if (is_nan((float)$searchCriteria->getData('currentPage'))) {
             $searchCriteria->setData('currentPage', 1);
         } else {
             $searchCriteria->setData('currentPage', $searchCriteria->getData('currentPage'));
         }
-        if (is_nan($searchCriteria->getData('pageSize'))) {
+        if (is_nan((float)$searchCriteria->getData('pageSize'))) {
             $searchCriteria->setData(
                 'pageSize',
                 DataConfig::PAGE_SIZE_LOAD_PRODUCT
@@ -543,10 +543,10 @@ class ProductManagement extends ServiceAbstract
             $searchCriteria = $this->getSearchCriteria();
         }
 
-        $searchCriteria->setData('currentPage', is_nan($searchCriteria->getData('currentPage')) ? 1 : $searchCriteria->getData('currentPage'));
+        $searchCriteria->setData('currentPage', is_nan((float)$searchCriteria->getData('currentPage')) ? 1 : $searchCriteria->getData('currentPage'));
         $searchCriteria->setData(
             'pageSize',
-            is_nan($searchCriteria->getData('pageSize')) ? DataConfig::PAGE_SIZE_LOAD_PRODUCT : $searchCriteria->getData('pageSize')
+            is_nan((float)$searchCriteria->getData('pageSize')) ? DataConfig::PAGE_SIZE_LOAD_PRODUCT : $searchCriteria->getData('pageSize')
         );
         $items = [];
         if ($searchCriteria->getData('categoryId')) {
@@ -891,7 +891,7 @@ class ProductManagement extends ServiceAbstract
             } else {
                 $ids = $searchCriteria->getData('entity_id');
             }
-            $collection->addFieldToFilter('entity_id', ['in' => explode(",", $ids)]);
+            $collection->addFieldToFilter('entity_id', ['in' => explode(",", (string)$ids)]);
         }
         if (($this->integrateData->isIntegrateWH()
                 || $this->integrateData->isMagentoInventory()
@@ -1018,10 +1018,10 @@ class ProductManagement extends ServiceAbstract
         } else {
             $searchValue = $searchCriteria->getData('searchValue');
             $searchValue = str_replace(',', ' ', $searchValue);
-            //            $searchField = $this->productHelper->getSearchOnlineAttribute(explode(",", $searchCriteria->getData('searchFields')));
+            //            $searchField = $this->productHelper->getSearchOnlineAttribute(explode(",", (string)$searchCriteria->getData('searchFields')));
             $searchField = explode(
                 ',',
-                $this->scopeConfig->getValue(
+                (string)$this->scopeConfig->getValue(
                     "pwa/search_product/pwa_search_product",
                     'stores',
                     $searchCriteria->getData('storeId')
@@ -1031,7 +1031,7 @@ class ProductManagement extends ServiceAbstract
                 $collection->addFieldToFilter('entity_id', null);
             }
 
-            foreach (explode(" ", $searchValue) as $value) {
+            foreach (explode(" ", (string)$searchValue) as $value) {
                 $_fieldFilters = [];
                 if (is_array($searchField) && $searchField[0] !== '') {
                     foreach ($searchField as $field) {
@@ -1079,12 +1079,12 @@ class ProductManagement extends ServiceAbstract
             $searchValue = $searchCriteria->getData('searchValue');
             $searchValue = str_replace(',', ' ', $searchValue);
             $searchField = $this->productHelper->getSearchOnlineAttribute(
-                explode(",", $searchCriteria->getData('searchFields'))
+                explode(",", (string)$searchCriteria->getData('searchFields'))
             );
             if ($searchValue === 'null' || $searchValue === ' ' || $searchValue === '') {
                 $collection->addFieldToFilter('entity_id', null);
             }
-            foreach (explode(" ", $searchValue) as $value) {
+            foreach (explode(" ", (string)$searchValue) as $value) {
                 $_fieldFilters = [];
                 foreach ($searchField as $field) {
                     if ($field === 'id') {
