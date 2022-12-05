@@ -189,69 +189,70 @@ class ProductManagement extends ServiceAbstract
     /**
      * ProductManagement constructor.
      *
-     * @param \Magento\Framework\Cache\FrontendInterface                           $cache
-     * @param \Magento\Catalog\Model\CategoryFactory                               $categoryFactory
-     * @param \Magento\Framework\App\RequestInterface                              $requestInterface
-     * @param \SM\XRetail\Helper\DataConfig                                        $dataConfig
-     * @param \Magento\Store\Model\StoreManagerInterface                           $storeManager
-     * @param \Magento\Catalog\Model\ProductFactory                                $productFactory
-     * @param \Magento\Catalog\Model\ResourceModel\Product\CollectionFactory       $collectionFactory
-     * @param \SM\Product\Repositories\ProductManagement\ProductOptions            $productOptions
-     * @param \Magento\Catalog\Model\Product\Media\Config                          $productMediaConfig
-     * @param \SM\Product\Repositories\ProductManagement\ProductAttribute          $productAttribute
-     * @param \SM\Product\Repositories\ProductManagement\ProductStock              $productStock
-     * @param \SM\Product\Repositories\ProductManagement\ProductPrice              $productPrice
+     * @param \Magento\Framework\Cache\FrontendInterface $cache
+     * @param \Magento\Catalog\Model\CategoryFactory $categoryFactory
+     * @param \Magento\Framework\App\RequestInterface $requestInterface
+     * @param \SM\XRetail\Helper\DataConfig $dataConfig
+     * @param \Magento\Store\Model\StoreManagerInterface $storeManager
+     * @param \Magento\Catalog\Model\ProductFactory $productFactory
+     * @param \Magento\Catalog\Model\ResourceModel\Product\CollectionFactory $collectionFactory
+     * @param \SM\Product\Repositories\ProductManagement\ProductOptions $productOptions
+     * @param \Magento\Catalog\Model\Product\Media\Config $productMediaConfig
+     * @param \SM\Product\Repositories\ProductManagement\ProductAttribute $productAttribute
+     * @param \SM\Product\Repositories\ProductManagement\ProductStock $productStock
+     * @param \SM\Product\Repositories\ProductManagement\ProductPrice $productPrice
      * @param \SM\Product\Repositories\ProductManagement\ProductMediaGalleryImages $productMediaGalleryImages
-     * @param \Magento\Catalog\Helper\Product                                      $catalogProduct
-     * @param \SM\CustomSale\Helper\Data                                           $customSaleHelper
-     * @param \Magento\Framework\Event\ManagerInterface                            $eventManagement
-     * @param \SM\Integrate\Helper\Data                                            $integrateData
-     * @param \SM\Integrate\Model\WarehouseIntegrateManagement                     $warehouseIntegrateManagement
-     * @param \SM\Product\Helper\ProductHelper                                     $productHelper
-     * @param \SM\Product\Helper\ProductImageHelper                                $productImageHelper
-     * @param \Magento\Framework\Registry                                          $registry
-     * @param \Magento\Eav\Api\AttributeSetRepositoryInterface                     $attributeSet
-     * @param \Magento\Eav\Model\ResourceModel\Entity\Attribute                    $eavAttribute
-     * @param \Magento\Framework\App\Config\ScopeConfigInterface                   $scopeConfig
-     * @param \Magento\Catalog\Model\CategoryRepository                            $categoryRepository
-     * @param \Magento\Framework\Notification\NotifierInterface                    $notifierPool
-     * @param XProductFactory                                                      $xProductFactory
-     * @param RetailHelper                                                         $retailHelper
-     * @param CategoryCollectionFactory                                            $categoryCollectionFactory
+     * @param \Magento\Catalog\Helper\Product $catalogProduct
+     * @param \SM\CustomSale\Helper\Data $customSaleHelper
+     * @param \Magento\Framework\Event\ManagerInterface $eventManagement
+     * @param \SM\Integrate\Helper\Data $integrateData
+     * @param \SM\Integrate\Model\WarehouseIntegrateManagement $warehouseIntegrateManagement
+     * @param \SM\Product\Helper\ProductHelper $productHelper
+     * @param \SM\Product\Helper\ProductImageHelper $productImageHelper
+     * @param \Magento\Framework\Registry $registry
+     * @param \Magento\Eav\Api\AttributeSetRepositoryInterface $attributeSet
+     * @param \Magento\Eav\Model\ResourceModel\Entity\Attribute $eavAttribute
+     * @param \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig
+     * @param \Magento\Catalog\Model\CategoryRepository $categoryRepository
+     * @param \Magento\Framework\Notification\NotifierInterface $notifierPool
+     * @param XProductFactory $xProductFactory
+     * @param RetailHelper $retailHelper
+     * @param CategoryCollectionFactory $categoryCollectionFactory
      */
     public function __construct(
-        FrontendInterface $cache,
-        CategoryFactory $categoryFactory,
-        RequestInterface $requestInterface,
-        DataConfig $dataConfig,
-        StoreManagerInterface $storeManager,
-        ProductFactory $productFactory,
-        CollectionFactory $collectionFactory,
-        ProductOptions $productOptions,
-        Config $productMediaConfig,
-        ProductAttribute $productAttribute,
-        ProductStock $productStock,
-        ProductPrice $productPrice,
-        ProductMediaGalleryImages $productMediaGalleryImages,
-        Product $catalogProduct,
-        Data $customSaleHelper,
-        ManagerInterface $eventManagement,
-        \SM\Integrate\Helper\Data $integrateData,
-        WarehouseIntegrateManagement $warehouseIntegrateManagement,
-        ProductHelper $productHelper,
-        ProductImageHelper $productImageHelper,
-        Registry $registry,
+        FrontendInterface               $cache,
+        CategoryFactory                 $categoryFactory,
+        RequestInterface                $requestInterface,
+        DataConfig                      $dataConfig,
+        StoreManagerInterface           $storeManager,
+        ProductFactory                  $productFactory,
+        CollectionFactory               $collectionFactory,
+        ProductOptions                  $productOptions,
+        Config                          $productMediaConfig,
+        ProductAttribute                $productAttribute,
+        ProductStock                    $productStock,
+        ProductPrice                    $productPrice,
+        ProductMediaGalleryImages       $productMediaGalleryImages,
+        Product                         $catalogProduct,
+        Data                            $customSaleHelper,
+        ManagerInterface                $eventManagement,
+        \SM\Integrate\Helper\Data       $integrateData,
+        WarehouseIntegrateManagement    $warehouseIntegrateManagement,
+        ProductHelper                   $productHelper,
+        ProductImageHelper              $productImageHelper,
+        Registry                        $registry,
         AttributeSetRepositoryInterface $attributeSet,
-        Attribute $eavAttribute,
-        ScopeConfigInterface $scopeConfig,
-        CategoryRepository $categoryRepository,
-        NotifierPool $notifierPool,
-        XProductFactory $xProductFactory,
-        RetailHelper $retailHelper,
-        CategoryCollectionFactory $categoryCollectionFactory,
-        Repository $attributeRepository,
-        Loader $loader
-    ) {
+        Attribute                       $eavAttribute,
+        ScopeConfigInterface            $scopeConfig,
+        CategoryRepository              $categoryRepository,
+        NotifierPool                    $notifierPool,
+        XProductFactory                 $xProductFactory,
+        RetailHelper                    $retailHelper,
+        CategoryCollectionFactory       $categoryCollectionFactory,
+        Repository                      $attributeRepository,
+        Loader                          $loader
+    )
+    {
         $this->cache = $cache;
         $this->catalogProduct = $catalogProduct;
         $this->productPrice = $productPrice;
@@ -459,9 +460,9 @@ class ProductManagement extends ServiceAbstract
 
         $loadingData = new DataObject(
             [
-                'collection'      => $collection,
+                'collection' => $collection,
                 'search_criteria' => $searchCriteria,
-                'items'           => $items,
+                'items' => $items,
             ]
         );
         $this->eventManagement->dispatch(
@@ -697,10 +698,20 @@ class ProductManagement extends ServiceAbstract
 
         $xProduct->setData('attribute_set_name', $this->getAttributeSetName($product->getAttributeSetId()));
 
-        $imageUrl = $this->productImageHelper->getImageUrl($product);
-        $gallery = $this->productMediaGalleryImages->getMediaGalleryImages($product);
-        $xProduct->setData('origin_image', (empty($imageUrl) && isset($gallery[0])) ? $gallery[0] : $imageUrl);
-        $xProduct->setData('media_gallery', $gallery);
+        try {
+            $imageUrl = $this->productImageHelper->getImageUrl($product);
+        } catch (\Throwable $e) {
+            $imageUrl = null;
+        }
+
+        try {
+            $gallery = $this->productMediaGalleryImages->getMediaGalleryImages($product);
+            $xProduct->setData('origin_image', (empty($imageUrl) && isset($gallery[0])) ? $gallery[0] : $imageUrl);
+            $xProduct->setData('media_gallery', $gallery);
+        } catch (\Throwable $e) {
+            $xProduct->setData('origin_image', '');
+            $xProduct->setData('media_gallery', []);
+        }
 
         $xProduct->setData('custom_attributes', $this->getProductAttribute()->getCustomAttributes($product));
         $xProduct->setData(
@@ -725,7 +736,7 @@ class ProductManagement extends ServiceAbstract
                 $this->productHelper->getProductAdditionAttribute(),
                 function ($result, $field) use ($product) {
                     if (!!$field && is_string($field)) {
-                        return $result.' '.json_encode($product->getData($field));
+                        return $result . ' ' . json_encode($product->getData($field));
                     } else {
                         return $result;
                     }
@@ -875,7 +886,7 @@ class ProductManagement extends ServiceAbstract
                 ['category_product' => $collection->getTable('catalog_category_product')],
                 'category_product.product_id = e.entity_id',
                 ['category_id' => 'category_product.category_id']
-            )->where('category_product.category_id ='.$searchCriteria->getData('categoryId'));
+            )->where('category_product.category_id =' . $searchCriteria->getData('categoryId'));
         }
 
         if ($searchCriteria->getData('typeId')) {
@@ -1036,9 +1047,9 @@ class ProductManagement extends ServiceAbstract
                 if (is_array($searchField) && $searchField[0] !== '') {
                     foreach ($searchField as $field) {
                         if ($field === 'id') {
-                            $_fieldFilters[] = ['attribute' => 'entity_id', 'like' => '%'.$value.'%'];
+                            $_fieldFilters[] = ['attribute' => 'entity_id', 'like' => '%' . $value . '%'];
                         } else {
-                            $_fieldFilters[] = ['attribute' => $field, 'like' => '%'.$value.'%'];
+                            $_fieldFilters[] = ['attribute' => $field, 'like' => '%' . $value . '%'];
                         }
                     }
                     $collection->addAttributeToFilter($_fieldFilters, null, 'left');
@@ -1088,9 +1099,9 @@ class ProductManagement extends ServiceAbstract
                 $_fieldFilters = [];
                 foreach ($searchField as $field) {
                     if ($field === 'id') {
-                        $_fieldFilters[] = ['attribute' => 'entity_id', 'like' => '%'.$value.'%'];
+                        $_fieldFilters[] = ['attribute' => 'entity_id', 'like' => '%' . $value . '%'];
                     } else {
-                        $_fieldFilters[] = ['attribute' => $field, 'like' => '%'.$value.'%'];
+                        $_fieldFilters[] = ['attribute' => $field, 'like' => '%' . $value . '%'];
                     }
                 }
                 $collection->addAttributeToFilter($_fieldFilters, null, 'left');
@@ -1224,6 +1235,6 @@ class ProductManagement extends ServiceAbstract
      */
     private function addNotificationError($message, $item = null)
     {
-        return $this->notifierPool->addCritical('Error During Load Product ID '.$item, $message);
+        return $this->notifierPool->addCritical('Error During Load Product ID ' . $item, $message);
     }
 }
